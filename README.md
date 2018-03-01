@@ -1,2 +1,2 @@
-# Coda-Compression-Program-in-D
+# Coda Compression Program
 Simple compression and decompression program with optional encryption.
