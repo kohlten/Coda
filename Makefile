@@ -34,11 +34,11 @@ uninstall:
 .PHONY: installWindows	
 
 installWindows:
-	mkdir C:/Program\ Files/coda
+	mkdir C:/Program\ Files/Coda
 	copy bin/coda C:/Program\ Files/coda/
 
 .PHONY: uninstallWindows
 
 uninstallWindows:
-	del C:/Program\ Files/coda/coda
-	rmdir C:/Program\ Files/coda
+	del C:/Program\ Files/Coda/coda
+	rmdir C:/Program\ Files/Coda
