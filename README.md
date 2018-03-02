@@ -21,7 +21,8 @@ If you wish to help, please either contact me at alex.strole004@gmail.com or add
 Thanks!
  
 Help:
-  Coda Compression Program
+
+  Coda Compression Program  
   Made by: Alex Strole
 
   Rewritten in D!
