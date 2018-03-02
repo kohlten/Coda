@@ -8,7 +8,7 @@ all:
 .PHONY: allv
 
 allv:
-	dub build --compiler=$(CC) -v --build=release --nodeps
+	dub build --compiler=$(CC) -v --build=release
 
 .PHONY: clean
 
@@ -20,15 +20,25 @@ clean:
 fclean:
 	make clean
 	rm bin/coda
+	
+.PHONY: install
 
-.PHONY: alloffline
+install:
+	sudo cp bin/coda /usr/bin
+	
+.PHONY: uninstall
 
-alloffline:
-	dub add-path dependencies
-	dub build --compiler=$(CC) --build=release
+uninstall:
+	sudo rm usr/bin/coda
 
-.PHONY: allvoffine
+.PHONY: installWindows	
 
-allvoffline:
-	dub add-path dependencies
-	dub build --compiler=$(CC) -v --build=release
+installWindows:
+	mkdir C:/Program\ Files/coda
+	copy bin/coda C:/Program\ Files/coda/
+
+.PHONY: uninstallWindows
+
+uninstallWindows:
+	del C:/Program\ Files/coda/coda
+	rmdir C:/Program\ Files/coda
