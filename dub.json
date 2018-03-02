@@ -1,0 +1,17 @@
+{
+	"name": "coda",
+	"authors": [
+		"Alexander Strole"
+	],
+	"dependencies": {
+		"zstd": "~>0.2.0",
+		"secured": "~>0.8.5",
+	},
+	"configureations": [
+		"openssl",
+	],
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2018, Alexander Strole",
+	"license": "proprietary",
+	"targetPath": "bin"
+}
