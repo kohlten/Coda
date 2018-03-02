@@ -17,6 +17,8 @@ OSX and Linux:
 Windows:
   To add it to your path go to advanced system variables and add the location to the path or make installWindows. Will be installed into your C:/Program Files/Coda.
   
+ Although you can install on windows, it is untested on windows.
+  
 If you wish to help, please either contact me at alex.strole004@gmail.com or add a pull request with your updated code.
 Thanks!
  
