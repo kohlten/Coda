@@ -267,7 +267,6 @@ int main(string[] argv)
 					return argumentError;
 				}
 		}
-		writeln(argv[i]);
 	}
 	if ((compress == 1 && decompress == 1) || (compress == 0 && decompress == 0) || (encryptF == 1 && decryptF == 1))
 	{
