@@ -1,6 +1,7 @@
 CC=ldc2
 
 .PHONY: all
+mkdir bin
 
 all:
 	dub build --compiler=$(CC) --build=release
