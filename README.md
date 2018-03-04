@@ -28,7 +28,7 @@ To install simply run make after downloading it.
 If you wish to help, please either contact me at alex.strole004@gmail.com or add a pull request with your updated code.
 Thanks!
  
-###Help:
+### Help:
 ```
   Coda Compression Program  
   Made by: Alex Strole
