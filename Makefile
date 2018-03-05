@@ -1,14 +1,15 @@
 CC=ldc2
 
 .PHONY: all
-mkdir bin
 
 all:
+	mkdir bin
 	dub build --compiler=$(CC) --build=release
 
 .PHONY: allv
 
 allv:
+	mkdir bin
 	dub build --compiler=$(CC) -v --build=release
 
 .PHONY: clean
