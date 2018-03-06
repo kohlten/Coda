@@ -36,7 +36,6 @@ coda -d -de -key= FILENAMES
 *		Add support for just encryption rather than both encryption and compression.
 *		Add support for random generation of a key if none is provided.
 *		Add support for compressing files within a folder and/or recursivly while still keeping the data structure while compressing.
-*		Add support for a extraction file to go along with a compressed file.
 *		Add better desciptions in the help.
 */		
 
