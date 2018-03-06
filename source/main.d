@@ -1,8 +1,10 @@
-import std.stdio : stderr, writeln;
-import std.file : write, exists, isFile, read;
+import std.stdio : stderr, writeln, File;
+import std.file : write, exists, isFile, read, isDir, dirEntries, SpanMode, mkdir;
 import std.conv : to, ConvException;
 import std.json : JSONValue, parseJSON;
 import std.string : indexOf;
+import std.algorithm : canFind;
+import std.array : split;
 
 const string VERSION = "v0.0.1";
 const string HELP =
@@ -15,8 +17,8 @@ coda --version
 coda -help
 coda -d FILENAME
 coda -c FILENAMES
-coda -c -en -key= FILENAMES
-coda -d -de -key= FILENAMES
+coda -c -e -key FILENAMES
+coda -u -d -key FILENAMES
 
 -help					Show this menu
 --version				Show current version
@@ -25,17 +27,17 @@ coda -d -de -key= FILENAMES
 -c  --compress:			Compress files
 -cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
 -e  --encrypt			Also encrypt the data before compression.
-	-k= --key=				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
+	-k --key				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
 -d --decrypt				Also decrypt the data.
-	-k= --key=				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
--n= --name=				Set the name for the output file in compression. Useless for decompression.
+	-k --key				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
+-n --name				Set the name for the output file in compression. Useless for decompression.
 ";
 
 /*
 *	TODO:
 *		Add support for just encryption rather than both encryption and compression.
 *		Add support for random generation of a key if none is provided.
-*		Add support for compressing files within a folder and/or recursivly while still keeping the data structure while compressing.
+*		DONE: Add support for compressing files within a folder and/or recursivly while still keeping the data structure while compressing.
 *		Add better desciptions in the help.
 */		
 
@@ -93,8 +95,6 @@ void throwError(const string errorMsg)
 */
 ubyte[] encryptDecryptData(const ubyte[] data, string key, const ubyte type)
 {
-	//import secured.aes : encrypt, decrypt;
-	//import secured.util : CryptographicException;
 	import botan.libstate.global_state : globalState;
 	import botan.constructs.cryptobox : CryptoBox;
 	import botan.rng.rng : Unique;
@@ -127,6 +127,16 @@ ubyte[] encryptDecryptData(const ubyte[] data, string key, const ubyte type)
 	return encData;
 }
 
+size_t inArray(string[] haystack, string needle, size_t start)
+{
+	foreach (i; start .. haystack.length)
+	{
+		if (haystack[i] == needle)
+			return i;
+	}
+	return -1;
+}
+
 /*
 *	Gets all the data from the list of files.
 *	If it is unable to convert or read the file,
@@ -148,8 +158,9 @@ string[] slurpFiles(const string[] files)
 				data ~= slurped; 
 			else
 			{
-				failed = true;
-				break;
+				writeln("Was unable to slurp " ~ file ~ ".");
+				failedAmount += 1;
+				continue;
 			}
 		}
 		else
@@ -174,7 +185,6 @@ string[] slurpFiles(const string[] files)
 */
 ubyte[] compressUncompressData(const ubyte[] data, const ubyte type)
 {
-	//import std.zlib : compress, uncompress, ZlibException;
 	import zstd : compress, uncompress, ZstdException;
 
 	ubyte[] resultData;
@@ -202,6 +212,27 @@ ubyte[] compressUncompressData(const ubyte[] data, const ubyte type)
 		}
 	}
 	return resultData;
+}
+
+string[] goThroughDirs(string[] files)
+{
+	string[] output;
+	foreach (i; 0 .. files.length)
+	{
+		if (isDir(files[i]))
+		{
+			foreach (file; dirEntries(files[i], SpanMode.depth))
+			{
+				if (isFile(file))
+					output ~= file;
+				else
+					files ~= file;
+			}
+		}
+		else if (isFile(files[i]))
+			output ~= files[i];
+	}
+	return output;
 }
 
 /*
@@ -278,7 +309,7 @@ int main(string[] argv)
 					writeln(HELP);
 					return 0;
 				default:
-					else if (exists(argv[i]) && isFile(argv[i]))
+					if (exists(argv[i]) && (isFile(argv[i]) || isDir(argv[i])))
 						files ~= argv[i];
 					else
 					{
@@ -288,9 +319,7 @@ int main(string[] argv)
 			}
 		}
 		else
-		{
 			skip = false;
-		}
 	}
 	if ((compress == 1 && decompress == 1) || (compress == 0 && decompress == 0) || (encryptF == 1 && decryptF == 1))
 	{
@@ -309,6 +338,7 @@ int main(string[] argv)
 	}
 	if (compress)
 	{
+		files = goThroughDirs(files);
 		string[] data = slurpFiles(files);
 		if (!data)
 		{
@@ -317,7 +347,11 @@ int main(string[] argv)
 		}
 		JSONValue json = JSONValue(string[string].init);
 		foreach (i; 0 .. files.length)
-			json[files[i]] = data[i];
+		{
+			if (verbose)
+				writeln(files[i], " is compressed!");
+			json[files[i]] = cast(string) data[i];
+		}
 		string jsonStr = json.toPrettyString;
 		ubyte[] compressed = compressUncompressData(cast(ubyte[]) jsonStr, 0);
 		if (!compressed)
@@ -349,6 +383,18 @@ int main(string[] argv)
 		JSONValue json = parseJSON(uncompressed);
 		foreach (string jsonkey, JSONValue value; json)
 		{
+			if (canFind(jsonkey, "/"))
+			{
+				string[] dirs = jsonkey.split("/");
+				dirs = dirs[0 .. dirs.length - 1];
+				string current;
+				foreach (i; 0 .. dirs.length)
+				{
+					current ~= dirs[i] ~ "/";
+					if (!exists(current))
+						mkdir(current);
+				}
+			}
 			if (verbose)
 				writeln("File " ~ jsonkey ~ " is decompressed!");
 			write(jsonkey, value.str);

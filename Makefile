@@ -1,15 +1,20 @@
 CC=ldc2
 
 .PHONY: all
+out = bin
 
 all:
-	mkdir bin
+	if [ ! -d "bin" ]; then \
+		mkdir bin; \
+	fi
 	dub build --compiler=$(CC) --build=release
 
 .PHONY: allv
 
 allv:
-	mkdir bin
+	if [ ! -d "bin" ]; then \
+		mkdir bin; \
+	fi
 	dub build --compiler=$(CC) -v --build=release
 
 .PHONY: clean

@@ -5,7 +5,7 @@
 	],
 	"dependencies": {
 		"zstd": "~>0.2.0",
-		"botan": { "version": "~master", "path": "../../.." }
+		"botan": { "version": "~master" }
 	},
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018, Alexander Strole",

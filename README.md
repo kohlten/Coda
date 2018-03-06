@@ -7,10 +7,9 @@ From most import to least important.
 ```
   dub
   A D compiler  - (ldc dmd gdc)
-  SecureD       - for encryption
+  botan         - for encryption
   zstd-d        - for compression
-  openssl       - dependency for SecureD
-  memutils      - dependency for SecureD
+  zlib-dev      - parent lib for zstd
  ``` 
 To install simply run make after downloading it.
 
