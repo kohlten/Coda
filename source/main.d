@@ -6,7 +6,7 @@ import std.string : indexOf;
 import std.algorithm : canFind;
 import std.array : split;
 
-const string VERSION = "v0.0.1";
+const string VERSION = "v0.0.2";
 const string HELP =
 "Coda Compression Program
 Made by: Alex Strole
