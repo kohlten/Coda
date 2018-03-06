@@ -5,13 +5,11 @@
 	],
 	"dependencies": {
 		"zstd": "~>0.2.0",
-		"botan": { "version": "~master", "path": "../../" }
+		"botan": { "version": "~master", "path": "../../.." }
 	},
-	"configureations": [
-		"openssl",
-	],
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018, Alexander Strole",
 	"license": "proprietary",
-	"targetPath": "bin"
+	"targetPath": "bin",
+	"lflags": ["-lz"],
 }
