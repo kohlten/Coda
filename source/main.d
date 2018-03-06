@@ -21,12 +21,12 @@ coda -d -de -key= FILENAMES
 -help					Show this menu
 --version				Show current version
 -v						Verbose mode
--d  --decompress:		Decompress a coda file
+-u  --uecompress:		Decompress a coda file
 -c  --compress:			Compress files
 -cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
--en  --encrypt			Also encrypt the data before compression.
+-e  --encrypt			Also encrypt the data before compression.
 	-k= --key=				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
--de --decrypt				Also decrypt the data.
+-d --decrypt				Also decrypt the data.
 	-k= --key=				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
 -n= --name=				Set the name for the output file in compression. Useless for decompression.
 ";
@@ -93,31 +93,34 @@ void throwError(const string errorMsg)
 */
 ubyte[] encryptDecryptData(const ubyte[] data, string key, const ubyte type)
 {
-	import secured.aes : encrypt, decrypt;
-	import secured.util : CryptographicException;
+	//import secured.aes : encrypt, decrypt;
+	//import secured.util : CryptographicException;
+	import botan.libstate.global_state : globalState;
+	import botan.constructs.cryptobox : CryptoBox;
+	import botan.rng.rng : Unique;
+	import botan.rng.auto_rng : AutoSeededRNG;
+	import botan.utils.exceptn : DecodingError;
 
 	if (key.length == 0)
 	{
 		throwError("Must include a key!");
 		return null;
 	}
-	ubyte[] newKey = cast(ubyte[]) key;
-	if (newKey.length < 48)
-		while (newKey.length < 48)
-			newKey ~= 0;
+	auto state = globalState();
+	Unique!AutoSeededRNG rng = new AutoSeededRNG;
 	ubyte[] encData;
 	if (type == 0)
 	{
 		try
-			encData = encrypt(newKey, cast(ubyte[]) data);
-		catch(CryptographicException)
+			encData = cast(ubyte[]) CryptoBox.encrypt(data.ptr, data.length, key, *rng);
+		catch(DecodingError)
 			encData = null;
 	}
 	else
 	{
 		try
-			encData = decrypt(newKey, cast(ubyte[]) data);
-		catch(CryptographicException)
+			encData = cast(ubyte[]) CryptoBox.decrypt(data.ptr, data.length, key);
+		catch(DecodingError)
 			encData = null;
 	}
 	
@@ -220,17 +223,17 @@ int main(string[] argv)
 			case "--compress":
 				compress = 1;
 				break;
-			case "-d":
+			case "-e":
 				goto case;
-			case "--decompress":
+			case "--uncompress":
 				decompress = 1;
 				break;
-			case "-en":
+			case "-e":
 				goto case;
 			case "--encrypt":
 				encryptF = 1;
 				break;
-			case "-de":
+			case "-d":
 				goto case;
 			case "--decrypt":
 				decryptF = 1;
@@ -267,7 +270,6 @@ int main(string[] argv)
 					return argumentError;
 				}
 		}
-		writeln(argv[i]);
 	}
 	if ((compress == 1 && decompress == 1) || (compress == 0 && decompress == 0) || (encryptF == 1 && decryptF == 1))
 	{

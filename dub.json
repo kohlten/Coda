@@ -5,7 +5,7 @@
 	],
 	"dependencies": {
 		"zstd": "~>0.2.0",
-		"secured": "~>0.8.5",
+		"botan": { "version": "~master", "path": "../../" }
 	},
 	"configureations": [
 		"openssl",
