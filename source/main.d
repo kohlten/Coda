@@ -52,7 +52,8 @@ ubyte decryptF = 0;
 /*
 *	Return values based on errors.
 */
-static enum : int {
+static enum : int
+{
 	ok = 0,
 	argumentError = 1,
 	failedToCompress = -1,
@@ -131,13 +132,15 @@ ubyte[] encryptDecryptData(const ubyte[] data, string key, const ubyte type)
 *	If it is unable to convert or read the file,
 *	Throws a FileError
 */
-string[] slurpFiles(const string[] files) {
+string[] slurpFiles(const string[] files)
+{
 	string[] data;
 	string	slurped;
 	int failedAmount;
 	bool failed = false;
 
-	foreach (file; files) {
+	foreach (file; files)
+	{
 		if (exists(file) && isFile(file))
 		{
 			slurped = cast(string) read(file);
@@ -154,7 +157,8 @@ string[] slurpFiles(const string[] files) {
 			failedAmount += 1;
 			writeln("Was unable to slurp " ~ file ~ ".");
 		}
-		if (failedAmount == files.length) {
+		if (failedAmount == files.length)
+		{
 			failed = true;
 			break;
 		}
@@ -222,7 +226,7 @@ int main(string[] argv)
 			case "--compress":
 				compress = 1;
 				break;
-			case "-e":
+			case "-u":
 				goto case;
 			case "--uncompress":
 				decompress = 1;
