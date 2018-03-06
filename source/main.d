@@ -21,7 +21,7 @@ coda -d -de -key= FILENAMES
 -help					Show this menu
 --version				Show current version
 -v						Verbose mode
--u  --uecompress:		Decompress a coda file
+-u  --uncompress:		Decompress a coda file
 -c  --compress:			Compress files
 -cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
 -e  --encrypt			Also encrypt the data before compression.
@@ -217,61 +217,79 @@ int main(string[] argv)
 	string[] files;
 	string key;
 	string outputFile = "out";
+	bool skip = false;
 	foreach (i; 1 .. argv.length)
 	{
-		switch (argv[i])
+		if (!skip)
 		{
-			case "-c":
-				goto case;
-			case "--compress":
-				compress = 1;
-				break;
-			case "-u":
-				goto case;
-			case "--uncompress":
-				decompress = 1;
-				break;
-			case "-e":
-				goto case;
-			case "--encrypt":
-				encryptF = 1;
-				break;
-			case "-d":
-				goto case;
-			case "--decrypt":
-				decryptF = 1;
-				break;
-			case "-v": 
-				verbose = 1;
-				break;
-			case "--version":
-				writeln(VERSION);
-				return 0;
-			case "-help":
-				writeln(HELP);
-				return 0;
-			default:
-				if (argv[i][0 .. 2] == "-k" || argv[i][0 .. 5] == "--key")
-					key = argv[i][indexOf(argv[i], "=") + 1 .. argv[i].length];
-				else if (argv[i][0 .. 18] == "--compressionLevel" || argv[i][0 .. 3] == "-cl")
-				{
+			switch (argv[i])
+			{
+				case "-c":
+					goto case;
+				case "--compress":
+					compress = 1;
+					break;
+				case "-u":
+					goto case;
+				case "--uncompress":
+					decompress = 1;
+					break;
+				case "-e":
+					goto case;
+				case "--encrypt":
+					encryptF = 1;
+					break;
+				case "-d":
+					goto case;
+				case "--decrypt":
+					decryptF = 1;
+					break;
+				case "-k":
+					goto case;
+				case "--key":
+					key = argv[i + 1];
+					skip = true;
+					break;
+				case "-cl":
+					goto case;
+				case "--compressionLevel":
 					try
-						compressionLevel = to!ubyte(argv[i][indexOf(argv[i], "=") + 1 .. argv[i].length]);
+						compressionLevel = to!ubyte(argv[i + 1]);
 					catch(ConvException)
 					{
 						throwError("Error: " ~ to!(string)(argumentError) ~ " Invalid number!");
 						return argumentError;
 					}
-				}
-				else if (argv[i][0 .. 2] == "-n" || argv[i][0 .. 6] == "-name")
-					outputFile = argv[i][indexOf(argv[i], "=") + 1 .. argv[i].length];
-				else if (exists(argv[i]) && isFile(argv[i]))
-					files ~= argv[i];
-				else
-				{
-					throwError("Unknown option " ~ argv[i]);
-					return argumentError;
-				}
+					skip = true;
+					break;
+				case "-n":
+					goto case;
+				case "--name":
+					outputFile = argv[i + 1];
+					skip = true;
+					break;
+				case "-v": 
+					verbose = 1;
+					break;
+				case "--version":
+					writeln(VERSION);
+					return 0;
+				case "-help":
+					writeln(HELP);
+					return 0;
+				default:
+					else if (exists(argv[i]) && isFile(argv[i]))
+						files ~= argv[i];
+					else
+					{
+						throwError("Unknown option " ~ argv[i]);
+						return argumentError;
+					}
+			}
+		}
+		else
+		{
+			skip = false;
 		}
 	}
 	if ((compress == 1 && decompress == 1) || (compress == 0 && decompress == 0) || (encryptF == 1 && decryptF == 1))
