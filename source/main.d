@@ -39,6 +39,7 @@ coda -u -d -key FILENAMES
 *		Add support for random generation of a key if none is provided.
 *		DONE: Add support for compressing files within a folder and/or recursivly while still keeping the data structure while compressing.
 *		Add better desciptions in the help.
+*		Seperate main into more functions.
 */		
 
 /*
