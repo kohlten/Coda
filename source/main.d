@@ -1,10 +1,11 @@
-import std.stdio : stderr, writeln, File;
+import std.stdio : stderr, writeln;
 import std.file : write, exists, isFile, read, isDir, dirEntries, SpanMode, mkdir;
 import std.conv : to, ConvException;
 import std.json : JSONValue, parseJSON;
 import std.string : indexOf;
 import std.algorithm : canFind;
 import std.array : split;
+import std.utf;
 
 const string VERSION = "v0.0.2";
 const string HELP =
@@ -45,8 +46,8 @@ coda -u -d -key FILENAMES
 /*
 *	Flags to see what to do.
 */
-ubyte compress = 0;
-ubyte decompress = 0;
+ubyte compressing = 0;
+ubyte decompressing = 0;
 ubyte verbose = 0;
 ubyte compressionLevel = 9;
 ubyte encryptF = 0;
@@ -94,7 +95,7 @@ void throwError(const string errorMsg)
 *	Encrypt or decrypt data based on a key.
 *	If the key is not correct, will throw CryptographicException.
 */
-ubyte[] encryptDecryptData(const ubyte[] data, string key, const ubyte type)
+string encryptDecryptData(const string data, string key, const ubyte type)
 {
 	import botan.libstate.global_state : globalState;
 	import botan.constructs.cryptobox : CryptoBox;
@@ -107,22 +108,26 @@ ubyte[] encryptDecryptData(const ubyte[] data, string key, const ubyte type)
 		throwError("Must include a key!");
 		return null;
 	}
+	ubyte[] newData = cast(ubyte[]) data;
 	auto state = globalState();
 	Unique!AutoSeededRNG rng = new AutoSeededRNG;
-	ubyte[] encData;
-	if (type == 0)
+	string encData;
+	if (!type)
 	{
 		try
-			encData = cast(ubyte[]) CryptoBox.encrypt(data.ptr, data.length, key, *rng);
+			encData = cast(string) CryptoBox.encrypt(newData.ptr, newData.length, key, *rng);
 		catch(DecodingError)
 			encData = null;
 	}
 	else
 	{
 		try
-			encData = cast(ubyte[]) CryptoBox.decrypt(data.ptr, data.length, key);
-		catch(DecodingError)
+			encData = cast(string) CryptoBox.decrypt(newData.ptr, newData.length, key);
+		catch(DecodingError e)
+		{
+			writeln(e);
 			encData = null;
+		}
 	}
 	
 	return encData;
@@ -146,7 +151,7 @@ size_t inArray(string[] haystack, string needle, size_t start)
 string[] slurpFiles(const string[] files)
 {
 	string[] data;
-	string	slurped;
+	string slurped;
 	int failedAmount;
 	bool failed = false;
 
@@ -184,32 +189,45 @@ string[] slurpFiles(const string[] files)
 *	Compress or decompress all the data given to it by
 *	chunking it into an acceptable buffer size.
 */
-ubyte[] compressUncompressData(const ubyte[] data, const ubyte type)
+string compressUncompressData(const string data, const ubyte type)
 {
 	import zstd : compress, uncompress, ZstdException;
 
-	ubyte[] resultData;
-	if (verbose)
-		writeln("Datalen:", data.length);
+	string resultData;
 
 	if (type == 0)
 	{
 		try
-			resultData = cast(ubyte[]) compress(cast(char[]) data, 9);
+			resultData = cast(string) compress(data, 9);
 		catch (ZstdException)
 		{
-			throwError("Failed to compresss! Are you sure its not encrypted or corrupt?");
+			//throwError("Failed to compresss! Are you sure its not encrypted or corrupt?");
 			resultData = null;
 		}
 	} 
 	else
 	{
 		try
-			resultData = cast(ubyte[]) uncompress(data);
+			resultData = cast(string) uncompress(data);
 		catch (ZstdException)
 		{
-			throwError("Failed to decompress! Are you sure its not encrypted or corrupt?");
+			//throwError("Failed to decompress! Are you sure its not encrypted or corrupt?");
 			resultData = null;
+		}
+	}
+	if (verbose)
+	{
+		if (compressing)
+		{
+			writeln("Original Length: ", data.length);
+			writeln("Compressed Length: ", resultData.length);
+			writeln("Compression ratio: ", cast(float) data.length /  cast(float) resultData.length);
+		}
+		else
+		{
+			writeln("Original Length: ", resultData.length);
+			writeln("Compressed Length: ", data.length);
+			writeln("Compression ratio: ", cast(float) resultData.length / cast(float) data.length);
 		}
 	}
 	return resultData;
@@ -259,12 +277,12 @@ int main(string[] argv)
 				case "-c":
 					goto case;
 				case "--compress":
-					compress = 1;
+					compressing = 1;
 					break;
 				case "-u":
 					goto case;
 				case "--uncompress":
-					decompress = 1;
+					decompressing = 1;
 					break;
 				case "-e":
 					goto case;
@@ -322,22 +340,22 @@ int main(string[] argv)
 		else
 			skip = false;
 	}
-	if ((compress == 1 && decompress == 1) || (compress == 0 && decompress == 0) || (encryptF == 1 && decryptF == 1))
+	if ((compressing == 1 && decompressing == 1) || (compressing == 0 && decompressing == 0) || (encryptF == 1 && decryptF == 1))
 	{
 		throwError("Error: " ~ to!(string)(argumentError) ~ " Not enough arguments! Do -help for help!");	
 		return argumentError;
 	}
-	if (compress == 1 && decryptF == 1)
+	if (compressing == 1 && decryptF == 1)
 	{
 		throwError("Error: " ~ to!(string)(argumentError) ~ " Cannot decrypt data to be compressed! Do -help for help!");	
 		return argumentError;
 	}
-	else if (decompress == 1 && encryptF == 1)
+	else if (decompressing == 1 && encryptF == 1)
 	{
 		throwError("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do -help for help!");	
 		return argumentError;
 	}
-	if (compress)
+	if (compressing)
 	{
 		files = goThroughDirs(files);
 		string[] data = slurpFiles(files);
@@ -350,38 +368,29 @@ int main(string[] argv)
 		foreach (i; 0 .. files.length)
 		{
 			if (verbose)
-				writeln(files[i], " is compressed!");
-			json[files[i]] = cast(string) data[i];
+				writeln(files[i]);
+			json[files[i]] = toUTF8(data[i]);
+			validate(json[files[i]].str);
 		}
-		string jsonStr = json.toPrettyString;
-		ubyte[] compressed = compressUncompressData(cast(ubyte[]) jsonStr, 0);
-		if (!compressed)
-			return failedToCompress;
+		string prettyString = json.toPrettyString;
 		if (encryptF)
-		{
-			compressed = encryptDecryptData(compressed, key, 0);
-			if (!jsonStr)
-			{
-				throwError("Error: " ~ to!(string)(failedToEncrypt) ~ " Failed to encrypt data!");
-				return failedToEncrypt;
-			}
-		}
-		if (verbose)
-		{
-			writeln("Uncompressed length:", jsonStr.length);
-			writeln("Compressed length:", compressed.length);
-		}
+			prettyString = encryptDecryptData(prettyString, key, 0);
+		string compressed = compressUncompressData(prettyString, 0);
 		write(outputFile ~ ".coda", compressed);
 	} 
 	else
 	{
-		ubyte[] data = cast(ubyte[]) slurpFiles(files)[0];
+		string data = slurpFiles(files)[0];
+		data = compressUncompressData(data, 1);
 		if (decryptF)
 			data = encryptDecryptData(data, key, 1);
-		string uncompressed = cast(string) compressUncompressData(data, 1);
-		if (uncompressed.length == 0)
+		if (!data)
+		{
+			throwError("Failed to uncompress!");
 			return failedToUncompress;
-		JSONValue json = parseJSON(uncompressed);
+		}
+		data = toUTF8(data);
+		auto json = parseJSON(data);
 		foreach (string jsonkey, JSONValue value; json)
 		{
 			if (canFind(jsonkey, "/"))
@@ -397,9 +406,9 @@ int main(string[] argv)
 				}
 			}
 			if (verbose)
-				writeln("File " ~ jsonkey ~ " is decompressed!");
+				writeln(jsonkey);
 			write(jsonkey, value.str);
 		}
-	}
+}
 	return ok;
 }

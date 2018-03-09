@@ -49,3 +49,9 @@ installWindows:
 uninstallWindows:
 	del C:/Program\ Files/Coda/coda
 	rmdir C:/Program\ Files/Coda
+
+.PHONY: re
+
+re:
+	make fclean
+	make
