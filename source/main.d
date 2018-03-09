@@ -274,34 +274,28 @@ int main(string[] argv)
 		{
 			switch (argv[i])
 			{
-				case "-c":
-					goto case;
+				case "-c": goto case;
 				case "--compress":
 					compressing = 1;
 					break;
-				case "-u":
-					goto case;
+				case "-u": goto case;
 				case "--uncompress":
 					decompressing = 1;
 					break;
-				case "-e":
-					goto case;
+				case "-e": goto case;
 				case "--encrypt":
 					encryptF = 1;
 					break;
-				case "-d":
-					goto case;
+				case "-d": goto case;
 				case "--decrypt":
 					decryptF = 1;
 					break;
-				case "-k":
-					goto case;
+				case "-k": goto case;
 				case "--key":
 					key = argv[i + 1];
 					skip = true;
 					break;
-				case "-cl":
-					goto case;
+				case "-cl": goto case;
 				case "--compressionLevel":
 					try
 						compressionLevel = to!ubyte(argv[i + 1]);
@@ -312,8 +306,7 @@ int main(string[] argv)
 					}
 					skip = true;
 					break;
-				case "-n":
-					goto case;
+				case "-n": goto case;
 				case "--name":
 					outputFile = argv[i + 1];
 					skip = true;
