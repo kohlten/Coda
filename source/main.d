@@ -133,6 +133,9 @@ string encryptDecryptData(const string data, string key, const ubyte type)
 	return encData;
 }
 
+/*
+*	Check if needle is in haystack starting from start.
+*/
 size_t inArray(string[] haystack, string needle, size_t start)
 {
 	foreach (i; start .. haystack.length)
@@ -233,6 +236,13 @@ string compressUncompressData(const string data, const ubyte type)
 	return resultData;
 }
 
+/*
+*	Find all files from the root directory by checking whether its a directory or a file first.
+*	If its a directory, enter it and find everything within that folder.
+*	If its a file, add it to output.
+*	Once it is done iterating for all the files,
+*	returns the files with their path from the root dir.
+*/
 string[] goThroughDirs(string[] files)
 {
 	string[] output;
