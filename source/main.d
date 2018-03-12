@@ -201,7 +201,7 @@ string compressUncompressData(const string data, const ubyte type)
 			resultData = cast(string) compress(data, 9);
 		catch (ZstdException)
 		{
-			//throwError("Failed to compresss! Are you sure its not encrypted or corrupt?");
+			throwError("Failed to compresss! Are you sure its not encrypted or corrupt?");
 			resultData = null;
 		}
 	} 
@@ -211,7 +211,7 @@ string compressUncompressData(const string data, const ubyte type)
 			resultData = cast(string) uncompress(data);
 		catch (ZstdException)
 		{
-			//throwError("Failed to decompress! Are you sure its not encrypted or corrupt?");
+			throwError("Failed to decompress! Are you sure its not encrypted or corrupt?");
 			resultData = null;
 		}
 	}
@@ -360,16 +360,28 @@ int main(string[] argv)
 		JSONValue json = JSONValue(string[string].init);
 		foreach (i; 0 .. files.length)
 		{
+			try
+				data[i] = toUTF8(data[i]);
+			catch (UTFException)
+			{
+				writeln("WARNING: File " ~ files[i] ~ " is invalid!");
+				continue;
+			}
 			if (verbose)
-				writeln(files[i]);
-			json[files[i]] = toUTF8(data[i]);
-			validate(json[files[i]].str);
+				writeln(files[i] ~ " is compressed!");
+			json[files[i]] = data[i];
 		}
 		string prettyString = json.toPrettyString;
 		if (encryptF)
+		{
+			writeln("encrypting");
 			prettyString = encryptDecryptData(prettyString, key, 0);
+		}
 		string compressed = compressUncompressData(prettyString, 0);
-		write(outputFile ~ ".coda", compressed);
+		if (canFind(".", outputFile))
+			write(outputFile, compressed);
+		else
+			write(outputFile ~ ".coda", compressed);
 	} 
 	else
 	{
@@ -382,6 +394,7 @@ int main(string[] argv)
 			throwError("Failed to uncompress!");
 			return failedToUncompress;
 		}
+		writeln(data);
 		data = toUTF8(data);
 		auto json = parseJSON(data);
 		foreach (string jsonkey, JSONValue value; json)

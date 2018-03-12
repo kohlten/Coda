@@ -28,9 +28,9 @@ def clean():
 
 if __name__ == '__main__':
 	logging.basicConfig(filename='output.log', level=logging.INFO, format="%(levelname)s: %(message)s")
-	#subprocess.call(["git", "clone", "https://github.com/Jebbs/DSFML.git", "bin/dsfml"])
+	subprocess.call(["git", "clone", "https://github.com/Jebbs/DSFML.git", "bin/dsfml"])
 	#subprocess.call(["rm", "-rf", "bin/dsfml/.git"])
-	#subprocess.call(["cp", "-rf", "bin/dsfml", "."])
+	subprocess.call(["cp", "-rf", "bin/dsfml", "."])
 	olddata = []
 	oldnames = findAllFiles("dsfml")
 	for file in oldnames:
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 	for i in range(100):
 		logging.info("Iter: " + str(i))
 		os.chdir("bin")
-		ot = time.time()
+		'''ot = time.time()
 		logging.info("Compression with encryption")
 		for i in range(10):
 			st = time.time()
@@ -75,12 +75,12 @@ if __name__ == '__main__':
 					clean()
 					sys.exit(1)
 			logging.info("Compression: " + str(compression) + " Decompression: " + str(uncompression)+ " thats roughly Compression:" + str(60 / compression) + " Decompression: " + str(60 / uncompression) + " per minute")
-		logging.info("Total time for encryption was: " + str(time.time() - ot) + " Average time for one iter: " + str((time.time() - ot) / 10))
+		logging.info("Total time for encryption was: " + str(time.time() - ot) + " Average time for one iter: " + str((time.time() - ot) / 10))'''
 		ot = time.time()
 		logging.info("Compression only")
 		for i in range(10):
 			st = time.time()
-			one = subprocess.call(["./coda", "-c", "-cl", "22", "dsfml"])
+			one = subprocess.call(["./coda", "-c", "-cl", "22", "-v", "dsfml"])
 			compression = time.time() - st
 			if one != 0:
 				logging.critical("Failed with exit code:" + str(one))
