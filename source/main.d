@@ -7,8 +7,8 @@ import std.algorithm : canFind;
 import std.array : split;
 import std.utf;
 
-const string VERSION = "v0.0.2";
-const string HELP =
+immutable string VERSION = "v0.0.3";
+immutable string HELP =
 "Coda Compression Program
 Made by: Alex Strole
 
@@ -373,10 +373,7 @@ int main(string[] argv)
 		}
 		string prettyString = json.toPrettyString;
 		if (encryptF)
-		{
-			writeln("encrypting");
 			prettyString = encryptDecryptData(prettyString, key, 0);
-		}
 		string compressed = compressUncompressData(prettyString, 0);
 		if (canFind(".", outputFile))
 			write(outputFile, compressed);
