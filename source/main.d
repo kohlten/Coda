@@ -401,7 +401,6 @@ int main(string[] argv)
 			throwError("Failed to uncompress!");
 			return failedToUncompress;
 		}
-		writeln(data);
 		data = toUTF8(data);
 		auto json = parseJSON(data);
 		foreach (string jsonkey, JSONValue value; json)
