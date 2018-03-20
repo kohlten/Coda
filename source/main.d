@@ -124,10 +124,7 @@ string encryptDecryptData(const string data, string key, const ubyte type)
 		try
 			encData = cast(string) CryptoBox.decrypt(newData.ptr, newData.length, key);
 		catch(DecodingError e)
-		{
-			writeln(e);
 			encData = null;
-		}
 	}
 	
 	return encData;
@@ -371,7 +368,10 @@ int main(string[] argv)
 		foreach (i; 0 .. files.length)
 		{
 			try
+			{
 				data[i] = toUTF8(data[i]);
+				validate(data[i]);
+			}
 			catch (UTFException)
 			{
 				writeln("WARNING: File " ~ files[i] ~ " is invalid!");
@@ -401,7 +401,6 @@ int main(string[] argv)
 			throwError("Failed to uncompress!");
 			return failedToUncompress;
 		}
-		data = toUTF8(data);
 		auto json = parseJSON(data);
 		foreach (string jsonkey, JSONValue value; json)
 		{
