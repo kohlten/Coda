@@ -215,21 +215,6 @@ string compressUncompressData(const string data, const ubyte type)
 			resultData = null;
 		}
 	}
-	if (verbose)
-	{
-		if (compressing)
-		{
-			writeln("Original Length: ", data.length);
-			writeln("Compressed Length: ", resultData.length);
-			writeln("Compression ratio: ", cast(float) data.length /  cast(float) resultData.length);
-		}
-		else
-		{
-			writeln("Original Length: ", resultData.length);
-			writeln("Compressed Length: ", data.length);
-			writeln("Compression ratio: ", cast(float) resultData.length / cast(float) data.length);
-		}
-	}
 	return resultData;
 }
 
@@ -261,6 +246,21 @@ string[] goThroughDirs(string[] files)
 	return output;
 }
 
+/*bool canFindStr(string haystack, string needle)
+{
+	writeln(haystack.length);
+	writeln(needle.length);
+	writeln(haystack[0 .. needle.length]);
+	foreach(i; 0 .. (haystack.length - needle.length))
+	{
+		writeln("Current: " ~ to!string(i));
+		writeln(haystack[i .. needle.length] ~ " " ~ needle);
+		if (haystack[i .. needle.length] == needle)
+			return true;
+	}
+	return false;
+}/*
+
 /*
 *	First check if there are correct arguments.
 *	Then, if compressing, slurp all the files inputted and put them into a json.
@@ -271,10 +271,15 @@ string[] goThroughDirs(string[] files)
 */
 int main(string[] argv)
 {
+	import std.datetime.stopwatch;
+
 	string[] files;
 	string key;
 	string outputFile = "out";
 	bool skip = false;
+	argv ~= ["-c", "-v", "-n", "t.test"];
+	writeln(argv);
+	auto time = StopWatch(AutoStart.no);
 	foreach (i; 1 .. argv.length)
 	{
 		if (!skip)
@@ -355,6 +360,7 @@ int main(string[] argv)
 		throwError("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do -help for help!");	
 		return argumentError;
 	}
+	time.start();
 	if (compressing)
 	{
 		files = goThroughDirs(files);
@@ -382,13 +388,28 @@ int main(string[] argv)
 			json[files[i]] = data[i];
 		}
 		string prettyString = json.toPrettyString;
+		long ulength = prettyString.length;
 		if (encryptF)
 			prettyString = encryptDecryptData(prettyString, key, 0);
-		string compressed = compressUncompressData(prettyString, 0);
-		if (canFind(".", outputFile))
-			write(outputFile, compressed);
+		prettyString = compressUncompressData(prettyString, 0);
+		long clength = prettyString.length;
+		writeln(canFind(outputFile, "."));
+		if (canFind(outputFile, "."))
+			write(outputFile, prettyString);
 		else
-			write(outputFile ~ ".coda", compressed);
+			write(outputFile ~ ".coda", prettyString);
+		if (verbose)
+		{
+			writeln("Original Length: ", ulength);
+			writeln("Compressed Length: ", clength);
+			writeln("Compression ratio: ", cast(float) ulength /  cast(float) clength);
+		}
+		/*else
+		{
+			writeln("Original Length: ", resultData.length);
+			writeln("Compressed Length: ", data.length);
+			writeln("Compression ratio: ", cast(float) resultData.length / cast(float) data.length);*/
+		writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
 	} 
 	else
 	{
@@ -404,7 +425,7 @@ int main(string[] argv)
 		auto json = parseJSON(data);
 		foreach (string jsonkey, JSONValue value; json)
 		{
-			if (canFind(jsonkey, "/"))
+			if (canFindStr(jsonkey, "/"))
 			{
 				string[] dirs = jsonkey.split("/");
 				dirs = dirs[0 .. dirs.length - 1];
@@ -420,6 +441,8 @@ int main(string[] argv)
 				writeln(jsonkey);
 			write(jsonkey, value.str);
 		}
-}
+		if (verbose)
+			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
+	}
 	return ok;
 }
