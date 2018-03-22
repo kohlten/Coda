@@ -25,6 +25,7 @@ clean:
 
 fclean: clean
 	rm -rf bin
+	rm -rf .dub
 	
 .PHONY: install
 
