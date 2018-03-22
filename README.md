@@ -50,8 +50,8 @@ Thanks!
   -c  --compress:			Compress files
   -cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
   -en  --encrypt			Also encrypt the data before compression.
-    -k= --key=				Set the key for decyption. Must be less than 49.
+    -k= --key=				Set the key for decyption.
   -de --decrypt				Also decrypt the data.
-    -k= --key=				Set the key for decyption. Must be less than 49.
+    -k= --key=				Set the key for decyption.
   -n= --name=				Set the name for the output file in compression. Useless for decompression.
 ```
