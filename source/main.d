@@ -8,7 +8,7 @@ import std.utf;
 import std.string;
 import extraFuncs;
 
-immutable string VERSION = "v0.0.3";
+immutable string VERSION = "v0.0.5";
 immutable string HELP =
 "Coda Compression Program
 Made by: Alex Strole
