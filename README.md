@@ -2,6 +2,8 @@
 Simple compression and decompression program with optional encryption.
 
 From most import to least important.
+DMD and GDC is currently broken, please use ldc 1.7.0.
+Botan is failing to compile on newest version of dlang compilers.
 
 ### Dependencies:
 ```
