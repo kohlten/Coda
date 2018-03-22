@@ -1,15 +1,13 @@
-import std.stdio : stderr, writeln;
+import std.stdio : writeln;
 import std.exception : ErrnoException;
-import std.file;
 import std.conv : to, ConvException;
-import std.json : JSONValue, parseJSON;
 import std.algorithm : canFind;
 import std.array : split;
-import std.utf;
 import std.string;
+import std.file : exists, isFile, isDir, mkdir;
 import extraFuncs;
 
-immutable string VERSION = "v0.0.5";
+immutable string VERSION = "v0.0.6";
 immutable string HELP =
 "Coda Compression Program
 Made by: Alex Strole
@@ -40,9 +38,11 @@ coda -u -d -key FILENAMES
 *	TODO:
 *		Add support for just encryption rather than both encryption and compression.
 *		Add support for random generation of a key if none is provided.
-*		DONE: Add support for compressing files within a folder and/or recursivly while still keeping the data structure while compressing.
 *		Add better desciptions in the help.
-*		Seperate main into more functions.
+*		Add better handling of flags.
+*		Optimise the code to run faster.
+*		Add handling for ../../
+*		Add more unittests
 */	
 
 /*
