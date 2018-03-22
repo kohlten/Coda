@@ -3,7 +3,8 @@ Simple compression and decompression program with optional encryption.
 
 DEV BRANCH
 Will have new features but also bugs waiting to be fixed.
-DMD is currently broken, please use ldc or gdc.
+DMD and GDC is currently broken, please use ldc 1.7.0.
+Botan is failing to compile on newest version of dlang compilers.
 
 From most import to least important.
 
