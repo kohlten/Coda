@@ -261,19 +261,26 @@ unittest
 		["hello.c\xb220", "hello.h\xb220", "goodbye.c\xb220", "goodbye.h\xb220"]);
 }
 
+struct FileInfo
+{
+	string name;
+	long length;
+}
+
+
 /*
 *	Check if header is valid first, then get the names and lengths
 *	from the pieces from getNamesLengths.
 *	If not valid, throw header Exception.
 */
-long[string] readHeader(string data)
+FileInfo[] readHeader(string data)
 {
+	FileInfo[] outData;
 	if (data[0 .. 3] != "\xfe\xfe\xb2")
 		throw new HeaderException("Invalid header prefix!");
 	long end = indexOf(data, "\xb2\xfe\xfe");
 	if (end == -1)
 		throw new HeaderException("Invalid header ending!");
-	long[string] filesAndLengths;
 	foreach (section; getNamesLengths(data))
 	{
 		long middle = indexOf(section, "\xb2");
@@ -281,15 +288,15 @@ long[string] readHeader(string data)
 			throw new HeaderException("Invalid header data!");
 		string name = section[0 .. middle];
 		long length = to!long(section[middle + 1 .. section.length]);
-		filesAndLengths[name] = length;
+		outData ~= FileInfo(name, length);
 	}
-	return filesAndLengths;
+	return outData;
 }
 
 unittest
 {
 	string header = createHeader([20, 20, 20, 20], ["hello.c", "hello.h", "goodbye.c", "goodbye.h"]);
-	long[string] readHeader = readHeader(header);
-	assert(readHeader == ["hello.c": 20L, "hello.h": 20L, "goodbye.c": 20L, "goodbye.h": 20L]);
+	auto readHeader = readHeader(header);
+	assert(readHeader == [FileInfo("hello.c", 20), FileInfo("hello.h", 20), FileInfo("goodbye.c", 20), FileInfo("goodbye.h", 20));
 }
 

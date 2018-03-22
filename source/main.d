@@ -232,14 +232,14 @@ int main(string[] argv)
 			writeln("Failed to uncompress!");
 			return failedToUncompress;
 		}
-		long[string] header = readHeader(data);
-		long start;
+		auto header = readHeader(data);
+		long start = 0;
 		data = data[indexOf(data, "\xb2\xfe\xfe") + 3 .. data.length];
-		foreach (file; header.keys)
+		foreach (file; header)
 		{
-			if (canFind(file, "/"))
+			if (canFind(file.name, "/"))
 			{
-				string[] dirs = file.split("/");
+				string[] dirs = file.name.split("/");
 				dirs = dirs[0 .. dirs.length - 1];
 				string current;
 				foreach (i; 0 .. dirs.length)
@@ -250,11 +250,11 @@ int main(string[] argv)
 				}
 			}
 			writeln(start);
-			writeln(header[file]);
-			writeln(file);
-			File openFile = File(file, "wb");
-			openFile.rawWrite(data[start .. header[file]]);
-			start = header[file] + start;
+			writeln(file.length);
+			writeln(file.name);
+			File openFile = File(file.name, "wb");
+			openFile.rawWrite(data[start .. file.length]);
+			start += file.length;
 		}
 		if (verbose)
 			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
