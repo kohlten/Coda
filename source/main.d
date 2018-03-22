@@ -1,11 +1,12 @@
 import std.stdio : stderr, writeln;
-import std.file : write, exists, isFile, read, isDir, dirEntries, SpanMode, mkdir;
+import std.file;
 import std.conv : to, ConvException;
 import std.json : JSONValue, parseJSON;
-import std.string : indexOf;
 import std.algorithm : canFind;
 import std.array : split;
 import std.utf;
+import std.string;
+import extraFuncs;
 
 immutable string VERSION = "v0.0.3";
 immutable string HELP =
@@ -41,7 +42,7 @@ coda -u -d -key FILENAMES
 *		DONE: Add support for compressing files within a folder and/or recursivly while still keeping the data structure while compressing.
 *		Add better desciptions in the help.
 *		Seperate main into more functions.
-*/		
+*/	
 
 /*
 *	Flags to see what to do.
@@ -51,7 +52,7 @@ ubyte decompressing = 0;
 ubyte verbose = 0;
 ubyte compressionLevel = 9;
 ubyte encryptF = 0;
-ubyte decryptF = 0;
+ubyte decryptF = 0;	
 
 /*
 *	Return values based on errors.
@@ -68,200 +69,6 @@ static enum : int
 }
 
 /*
-*	Simple exception class thrown for verbose data.
-*/
-class CompressionException : Exception
-{
-    this(string msg, string file = __FILE__, size_t line = __LINE__) {
-        super(msg, file, line);
-    }
-}
-
-/*
-*	If verbose, show stack data to see where the issue is.
-*	Otherwise, output generic errors
-*/
-void throwError(const string errorMsg)
-{
-	if (verbose)
-		throw new CompressionException(errorMsg);
-	else 
-	{
-		stderr.writeln(errorMsg);
-	}
-}
-
-/*
-*	Encrypt or decrypt data based on a key.
-*	If the key is not correct, will throw CryptographicException.
-*/
-string encryptDecryptData(const string data, string key, const ubyte type)
-{
-	import botan.libstate.global_state : globalState;
-	import botan.constructs.cryptobox : CryptoBox;
-	import botan.rng.rng : Unique;
-	import botan.rng.auto_rng : AutoSeededRNG;
-	import botan.utils.exceptn : DecodingError;
-
-	if (key.length == 0)
-	{
-		throwError("Must include a key!");
-		return null;
-	}
-	ubyte[] newData = cast(ubyte[]) data;
-	auto state = globalState();
-	Unique!AutoSeededRNG rng = new AutoSeededRNG;
-	string encData;
-	if (!type)
-	{
-		try
-			encData = cast(string) CryptoBox.encrypt(newData.ptr, newData.length, key, *rng);
-		catch(DecodingError)
-			encData = null;
-	}
-	else
-	{
-		try
-			encData = cast(string) CryptoBox.decrypt(newData.ptr, newData.length, key);
-		catch(DecodingError e)
-			encData = null;
-	}
-	
-	return encData;
-}
-
-/*
-*	Check if needle is in haystack starting from start.
-*/
-size_t inArray(string[] haystack, string needle, size_t start)
-{
-	foreach (i; start .. haystack.length)
-	{
-		if (haystack[i] == needle)
-			return i;
-	}
-	return -1;
-}
-
-/*
-*	Gets all the data from the list of files.
-*	If it is unable to convert or read the file,
-*	Throws a FileError
-*/
-string[] slurpFiles(const string[] files)
-{
-	string[] data;
-	string slurped;
-	int failedAmount;
-	bool failed = false;
-
-	foreach (file; files)
-	{
-		if (exists(file) && isFile(file))
-		{
-			slurped = cast(string) read(file);
-			if (slurped)
-				data ~= slurped; 
-			else
-			{
-				writeln("Was unable to slurp " ~ file ~ ".");
-				failedAmount += 1;
-				continue;
-			}
-		}
-		else
-		{
-			failedAmount += 1;
-			writeln("Was unable to slurp " ~ file ~ ".");
-		}
-		if (failedAmount == files.length)
-		{
-			failed = true;
-			break;
-		}
-	}
-	if (failed)
-		data = null;
-	return data;
-}
-
-/*
-*	Compress or decompress all the data given to it by
-*	chunking it into an acceptable buffer size.
-*/
-string compressUncompressData(const string data, const ubyte type)
-{
-	import zstd : compress, uncompress, ZstdException;
-
-	string resultData;
-
-	if (type == 0)
-	{
-		try
-			resultData = cast(string) compress(data, 9);
-		catch (ZstdException)
-		{
-			throwError("Failed to compresss! Are you sure its not encrypted or corrupt?");
-			resultData = null;
-		}
-	} 
-	else
-	{
-		try
-			resultData = cast(string) uncompress(data);
-		catch (ZstdException)
-		{
-			throwError("Failed to decompress! Are you sure its not encrypted or corrupt?");
-			resultData = null;
-		}
-	}
-	if (verbose)
-	{
-		if (compressing)
-		{
-			writeln("Original Length: ", data.length);
-			writeln("Compressed Length: ", resultData.length);
-			writeln("Compression ratio: ", cast(float) data.length /  cast(float) resultData.length);
-		}
-		else
-		{
-			writeln("Original Length: ", resultData.length);
-			writeln("Compressed Length: ", data.length);
-			writeln("Compression ratio: ", cast(float) resultData.length / cast(float) data.length);
-		}
-	}
-	return resultData;
-}
-
-/*
-*	Find all files from the root directory by checking whether its a directory or a file first.
-*	If its a directory, enter it and find everything within that folder.
-*	If its a file, add it to output.
-*	Once it is done iterating for all the files,
-*	returns the files with their path from the root dir.
-*/
-string[] goThroughDirs(string[] files)
-{
-	string[] output;
-	foreach (i; 0 .. files.length)
-	{
-		if (isDir(files[i]))
-		{
-			foreach (file; dirEntries(files[i], SpanMode.depth))
-			{
-				if (isFile(file))
-					output ~= file;
-				else
-					files ~= file;
-			}
-		}
-		else if (isFile(files[i]))
-			output ~= files[i];
-	}
-	return output;
-}
-
-/*
 *	First check if there are correct arguments.
 *	Then, if compressing, slurp all the files inputted and put them into a json.
 *	Then compress that data.
@@ -271,10 +78,13 @@ string[] goThroughDirs(string[] files)
 */
 int main(string[] argv)
 {
+	import std.datetime.stopwatch;
+
 	string[] files;
 	string key;
 	string outputFile = "out";
 	bool skip = false;
+	auto time = StopWatch(AutoStart.no);
 	foreach (i; 1 .. argv.length)
 	{
 		if (!skip)
@@ -308,7 +118,7 @@ int main(string[] argv)
 						compressionLevel = to!ubyte(argv[i + 1]);
 					catch(ConvException)
 					{
-						throwError("Error: " ~ to!(string)(argumentError) ~ " Invalid number!");
+						writeln("Error: " ~ to!(string)(argumentError) ~ " Invalid number!");
 						return argumentError;
 					}
 					skip = true;
@@ -332,7 +142,7 @@ int main(string[] argv)
 						files ~= argv[i];
 					else
 					{
-						throwError("Unknown option " ~ argv[i]);
+						writeln("Unknown file or option " ~ argv[i]);
 						return argumentError;
 					}
 			}
@@ -342,71 +152,94 @@ int main(string[] argv)
 	}
 	if ((compressing == 1 && decompressing == 1) || (compressing == 0 && decompressing == 0) || (encryptF == 1 && decryptF == 1))
 	{
-		throwError("Error: " ~ to!(string)(argumentError) ~ " Not enough arguments! Do -help for help!");	
+		writeln("Error: " ~ to!(string)(argumentError) ~ " Not enough arguments! Do -help for help!");	
 		return argumentError;
 	}
 	if (compressing == 1 && decryptF == 1)
 	{
-		throwError("Error: " ~ to!(string)(argumentError) ~ " Cannot decrypt data to be compressed! Do -help for help!");	
+		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot decrypt data to be compressed! Do -help for help!");	
 		return argumentError;
 	}
 	else if (decompressing == 1 && encryptF == 1)
 	{
-		throwError("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do -help for help!");	
+		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do -help for help!");	
 		return argumentError;
 	}
+	time.start();
 	if (compressing)
 	{
 		files = goThroughDirs(files);
 		string[] data = slurpFiles(files);
 		if (!data)
 		{
-			throwError("Was unable to get any data. Please input valid files.");
+			writeln("Was unable to get any data. Please input valid files.");
 			return failedToRead;
 		}
-		JSONValue json = JSONValue(string[string].init);
+		long[] lengths;
+		long ulength;
+		string outData;
+
 		foreach (i; 0 .. files.length)
 		{
-			try
-			{
-				data[i] = toUTF8(data[i]);
-				validate(data[i]);
-			}
-			catch (UTFException)
-			{
-				writeln("WARNING: File " ~ files[i] ~ " is invalid!");
-				continue;
-			}
-			if (verbose)
-				writeln(files[i] ~ " is compressed!");
-			json[files[i]] = data[i];
+			ulength += data[i].length;
+			lengths ~= data[i].length;
+			outData ~= data[i];
 		}
-		string prettyString = json.toPrettyString;
+		//outData = compressUncompressData(createHeader(lengths, files) ~ outData, compressionLevel, 0);
+		outData = createHeader(lengths, files) ~ outData;
+		if (!outData)
+		{
+				writeln("Was unable to compress data.");
+				return failedToCompress;
+		}
+		long clength = outData.length;
 		if (encryptF)
-			prettyString = encryptDecryptData(prettyString, key, 0);
-		string compressed = compressUncompressData(prettyString, 0);
-		if (canFind(".", outputFile))
-			write(outputFile, compressed);
+		{
+			outData = encryptDecryptData(outData, key, 0);
+			if (!outData)
+			{
+				writeln("Was unable to encrypt data.");
+				return failedToEncrypt;
+			}
+		}
+		if (canFind(outputFile, "."))
+			write(outputFile, outData);
 		else
-			write(outputFile ~ ".coda", compressed);
+			write(outputFile ~ ".coda", outData);
+		if (verbose)
+		{
+			writeln("Original Length: ", ulength);
+			writeln("Compressed Length: ", clength);
+			writeln("Compression ratio: ", cast(float) ulength /  cast(float) clength);
+			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
+		}
 	} 
 	else
 	{
 		string data = slurpFiles(files)[0];
-		data = compressUncompressData(data, 1);
-		if (decryptF)
-			data = encryptDecryptData(data, key, 1);
+		//data = compressUncompressData(data, 0, 1);
 		if (!data)
 		{
-			throwError("Failed to uncompress!");
+			writeln("Failed to uncompress!");
 			return failedToUncompress;
 		}
-		auto json = parseJSON(data);
-		foreach (string jsonkey, JSONValue value; json)
+		long[string] header = readHeader(data);
+		if (decryptF)
 		{
-			if (canFind(jsonkey, "/"))
+			data = encryptDecryptData(data, key, 1);
+			if (!data)
 			{
-				string[] dirs = jsonkey.split("/");
+				writeln("Failed to decrypt!");
+				return failedToDecrypt;
+			}
+		}
+		long start;
+		data = data[indexOf(data, "\xb2\xfe\xfe") + 3 .. data.length];
+		foreach (file; header.keys)
+		{
+			if (canFind(file, "/"))
+			{
+				string[] dirs = file.split("/");
 				dirs = dirs[0 .. dirs.length - 1];
 				string current;
 				foreach (i; 0 .. dirs.length)
@@ -416,10 +249,13 @@ int main(string[] argv)
 						mkdir(current);
 				}
 			}
-			if (verbose)
-				writeln(jsonkey);
-			write(jsonkey, value.str);
+			writeln(file ~ " " ~ to!string(file.length) ~ " ");
+			string filename = to!string(file);
+			write(filename, data[start .. header[file]]);
+			start = header[file];
 		}
-}
+		if (verbose)
+			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
+	}
 	return ok;
 }
