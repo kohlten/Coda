@@ -1,6 +1,10 @@
 # Coda Compression Program
 Simple compression and decompression program with optional encryption.
 
+DEV BRANCH
+Will have new features but also bugs waiting to be fixed.
+DMD is currently broken, please use ldc or gdc.
+
 From most import to least important.
 
 ### Dependencies:
@@ -10,7 +14,7 @@ From most import to least important.
   botan         - for encryption
   zstd-d        - for compression
   zlib-dev      - parent lib for zstd
- ``` 
+ ```
 To install simply run make after downloading it.
 
 ### OSX and Linux:
