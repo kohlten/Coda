@@ -28,9 +28,9 @@ coda -u -d -key FILENAMES
 -c  --compress:			Compress files
 -cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
 -e  --encrypt			Also encrypt the data before compression.
-	-k --key				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
+	-k --key				Set the key for decyption. Must be less than 49.
 -d --decrypt				Also decrypt the data.
-	-k --key				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
+	-k --key				Set the key for decyption. Must be less than 49.
 -n --name				Set the name for the output file in compression. Useless for decompression.
 ";
 
