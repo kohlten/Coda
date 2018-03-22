@@ -79,6 +79,7 @@ static enum : int
 int main(string[] argv)
 {
 	import std.datetime.stopwatch;
+	import std.stdio : File;
 
 	string[] files;
 	string key;
@@ -185,8 +186,7 @@ int main(string[] argv)
 			lengths ~= data[i].length;
 			outData ~= data[i];
 		}
-		//outData = compressUncompressData(createHeader(lengths, files) ~ outData, compressionLevel, 0);
-		outData = createHeader(lengths, files) ~ outData;
+		outData = compressUncompressData(createHeader(lengths, files) ~ outData, compressionLevel, 0);
 		if (!outData)
 		{
 				writeln("Was unable to compress data.");
@@ -217,13 +217,6 @@ int main(string[] argv)
 	else
 	{
 		string data = slurpFiles(files)[0];
-		//data = compressUncompressData(data, 0, 1);
-		if (!data)
-		{
-			writeln("Failed to uncompress!");
-			return failedToUncompress;
-		}
-		long[string] header = readHeader(data);
 		if (decryptF)
 		{
 			data = encryptDecryptData(data, key, 1);
@@ -233,6 +226,13 @@ int main(string[] argv)
 				return failedToDecrypt;
 			}
 		}
+		data = compressUncompressData(data, 0, 1);
+		if (!data)
+		{
+			writeln("Failed to uncompress!");
+			return failedToUncompress;
+		}
+		long[string] header = readHeader(data);
 		long start;
 		data = data[indexOf(data, "\xb2\xfe\xfe") + 3 .. data.length];
 		foreach (file; header.keys)
@@ -249,10 +249,12 @@ int main(string[] argv)
 						mkdir(current);
 				}
 			}
-			writeln(file ~ " " ~ to!string(file.length) ~ " ");
-			string filename = to!string(file);
-			write(filename, data[start .. header[file]]);
-			start = header[file];
+			writeln(start);
+			writeln(header[file]);
+			writeln(file);
+			File openFile = File(file, "wb");
+			openFile.rawWrite(data[start .. header[file]]);
+			start = header[file] + start;
 		}
 		if (verbose)
 			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
