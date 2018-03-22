@@ -1,4 +1,5 @@
 import std.stdio : stderr, writeln;
+import std.exception : ErrnoException;
 import std.file;
 import std.conv : to, ConvException;
 import std.json : JSONValue, parseJSON;
@@ -179,7 +180,6 @@ int main(string[] argv)
 		long[] lengths;
 		long ulength;
 		string outData;
-
 		foreach (i; 0 .. files.length)
 		{
 			ulength += data[i].length;
@@ -203,9 +203,15 @@ int main(string[] argv)
 			}
 		}
 		if (canFind(outputFile, "."))
-			write(outputFile, outData);
+		{
+			File outFile = File(outputFile, "wb");
+			outFile.rawWrite(outData);
+		}
 		else
-			write(outputFile ~ ".coda", outData);
+		{
+			File outFile = File(outputFile ~ ".coda", "wb");
+			outFile.rawWrite(outData);
+		}
 		if (verbose)
 		{
 			writeln("Original Length: ", ulength);
@@ -249,11 +255,13 @@ int main(string[] argv)
 						mkdir(current);
 				}
 			}
-			writeln(start);
-			writeln(file.length);
-			writeln(file.name);
-			File openFile = File(file.name, "wb");
-			openFile.rawWrite(data[start .. file.length]);
+			try
+			{
+				File openFile = File(file.name, "wb");
+				openFile.rawWrite(data[start .. file.length + start]);
+			}
+			catch (ErrnoException e)
+				writeln("Was unable to write to file " ~ file.name ~ " with error " ~ to!string(e)[0 .. to!string(e).indexOf('\n')]);
 			start += file.length;
 		}
 		if (verbose)

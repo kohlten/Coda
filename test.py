@@ -38,6 +38,12 @@ if __name__ == '__main__':
 		file.close()
 	key = "FUNFUNWITHABUNBUN"
 	st = time.time()
+	subprocess.call("tar -cf tarcheck.tar bin/dsfml".split(" "))
+	baselinec = (time.time() - st)
+	st = time()
+	subprocess.call("tar -xf tarcheck.tar")
+	baselineu = (time.time() - st)
+	st = time()
 	if subprocess.call("make") != 0:
 		sys.exit(1)
 	logging.info("Took " + str(time.time() - st) + " seconds to build!")
@@ -54,7 +60,7 @@ if __name__ == '__main__':
 				logging.critical("Failed with exit code:" + str(one))
 				clean()
 				sys.exit(1)
-			subprocess.call(["rm", "-rf", "dsfml-2.1.1"])
+			subprocess.call(["rm", "-rf", "dsfml"])
 			st = time.time()
 			two = subprocess.call(["./coda", "-d", "-u", "-k", key, "out.coda"])
 			uncompression = time.time() - st
@@ -63,7 +69,7 @@ if __name__ == '__main__':
 				clean()
 				sys.exit(1)
 			newdata = []
-			newnames = findAllFiles("dsfml-2.1.1")
+			newnames = findAllFiles("dsfml")
 			for file in newnames:
 				file = open(file, 'r')
 				newdata.append(file.read())
@@ -85,7 +91,9 @@ if __name__ == '__main__':
 				logging.critical("Failed with exit code:" + str(one))
 				clean()
 				sys.exit(1)
-			subprocess.call(["rm", "-rf", "dsfml-2.1.1"])
+			if compression > baselinec:
+				logging.info("Took longer than the base line with " + str(compression - baseline) + " more seconds!")
+			subprocess.call(["rm", "-rf", "dsfml"])
 			st = time.time()
 			two = subprocess.call(["./coda", "-u", "out.coda"])
 			uncompression = time.time() - st
@@ -93,8 +101,10 @@ if __name__ == '__main__':
 				logging.critical("Failed with exit code:" + str(two))
 				clean()
 				sys.exit(1)
+			if uncompression > baselineu:
+				logging.info("Took longer than the base line with " + str(compression - baseline) + " more seconds!")
 			newdata = []
-			newnames = findAllFiles("dsfml-2.1.1")
+			newnames = findAllFiles("dsfml")
 			for file in newnames:
 				file = open(file, 'r')
 				newdata.append(file.read())

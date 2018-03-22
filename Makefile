@@ -1,7 +1,6 @@
 CC=ldc2
 
 .PHONY: all
-out = bin
 
 all:
 	if [ ! -d "bin" ]; then \
@@ -15,7 +14,7 @@ allv:
 	if [ ! -d "bin" ]; then \
 		mkdir bin; \
 	fi
-	dub build --compiler=$(CC) -v --build=release
+	dub build --compiler=$(CC) --vverbose --build=release
 
 .PHONY: clean
 
@@ -24,9 +23,8 @@ clean:
 
 .PHONY: fclean
 
-fclean:
-	make clean
-	rm bin/coda
+fclean: clean
+	rm -rf bin
 	
 .PHONY: install
 
@@ -52,6 +50,4 @@ uninstallWindows:
 
 .PHONY: re
 
-re:
-	make fclean
-	make
+re: fclean all
