@@ -16,6 +16,11 @@ allv:
 	fi
 	dub build --compiler=$(CC) --vverbose --build=release
 
+.PHONY: test
+
+test:
+	dub test --compiler=$(CC)
+
 .PHONY: clean
 
 clean:

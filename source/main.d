@@ -1,13 +1,14 @@
-import std.stdio : writeln;
+import std.stdio : writeln, File;
 import std.exception : ErrnoException;
 import std.conv : to, ConvException;
 import std.algorithm : canFind;
 import std.array : split;
-import std.string;
+import std.string : indexOf;
 import std.file : exists, isFile, isDir, mkdir;
+import std.datetime.stopwatch;
 import extraFuncs;
 
-immutable string VERSION = "v0.0.6";
+immutable string VERSION = "v0.0.7";
 immutable string HELP =
 "Coda Compression Program
 Made by: Alex Strole
@@ -21,27 +22,26 @@ coda -c FILENAMES
 coda -c -e -key FILENAMES
 coda -u -d -key FILENAMES
 
--help					Show this menu
+--help					Show this menu
 --version				Show current version
 -v						Verbose mode
 -u  --uncompress:		Decompress a coda file
 -c  --compress:			Compress files
--cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
+-l --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
 -e  --encrypt			Also encrypt the data before compression.
-	-k --key				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
+	-k --key				Set the key for decyption. If not provided, a random one will be generated.
 -d --decrypt				Also decrypt the data.
-	-k --key				Set the key for decyption. Must be less than 49. If not provided, a random one will be generated.
+	-k --key				Set the key for decyption. If not provided, a random one will be generated.
 -n --name				Set the name for the output file in compression. Useless for decompression.
 ";
 
 /*
 *	TODO:
-*		Add support for just encryption rather than both encryption and compression.
-*		Add support for random generation of a key if none is provided.
 *		Add better desciptions in the help.
 *		Add better handling of flags.
+*		Add -cen support
+*		Add multithreading support for faster compression
 *		Optimise the code to run faster.
-*		Add handling for ../../
 *		Add more unittests
 */	
 
@@ -79,9 +79,6 @@ static enum : int
 */
 int main(string[] argv)
 {
-	import std.datetime.stopwatch;
-	import std.stdio : File;
-
 	string[] files;
 	string key;
 	string outputFile = "out";
@@ -114,7 +111,7 @@ int main(string[] argv)
 					key = argv[i + 1];
 					skip = true;
 					break;
-				case "-cl": goto case;
+				case "-l": goto case;
 				case "--compressionLevel":
 					try
 						compressionLevel = to!ubyte(argv[i + 1]);
@@ -136,7 +133,7 @@ int main(string[] argv)
 				case "--version":
 					writeln(VERSION);
 					return 0;
-				case "-help":
+				case "--help":
 					writeln(HELP);
 					return 0;
 				default:
@@ -152,23 +149,23 @@ int main(string[] argv)
 		else
 			skip = false;
 	}
-	if ((compressing == 1 && decompressing == 1) || (compressing == 0 && decompressing == 0) || (encryptF == 1 && decryptF == 1))
+	if ((compressing && decompressing) || (!compressing && !decompressing && (!encryptF && !decryptF)) || (encryptF && decryptF))
 	{
-		writeln("Error: " ~ to!(string)(argumentError) ~ " Not enough arguments! Do -help for help!");	
+		writeln("Error: " ~ to!(string)(argumentError) ~ " Not enough arguments! Do --help for help!");	
 		return argumentError;
 	}
-	if (compressing == 1 && decryptF == 1)
+	else if (compressing && decryptF)
 	{
-		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot decrypt data to be compressed! Do -help for help!");	
+		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot decrypt data to be compressed! Do --help for help!");	
 		return argumentError;
 	}
-	else if (decompressing == 1 && encryptF == 1)
+	else if (decompressing && encryptF)
 	{
-		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do -help for help!");	
+		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do --help for help!");	
 		return argumentError;
 	}
 	time.start();
-	if (compressing)
+	if (compressing || encryptF)
 	{
 		files = goThroughDirs(files);
 		string[] data = slurpFiles(files);
@@ -186,11 +183,15 @@ int main(string[] argv)
 			lengths ~= data[i].length;
 			outData ~= data[i];
 		}
-		outData = compressUncompressData(createHeader(lengths, files) ~ outData, compressionLevel, 0);
-		if (!outData)
+		outData = createHeader(lengths, files) ~ outData;
+		if (compressing)
 		{
-				writeln("Was unable to compress data.");
-				return failedToCompress;
+			outData = compressUncompressData(outData, compressionLevel, 0);
+			if (!outData)
+			{
+					writeln("Was unable to compress data.");
+					return failedToCompress;
+			}
 		}
 		long clength = outData.length;
 		if (encryptF)
@@ -232,11 +233,14 @@ int main(string[] argv)
 				return failedToDecrypt;
 			}
 		}
-		data = compressUncompressData(data, 0, 1);
-		if (!data)
+		if (decompressing)
 		{
-			writeln("Failed to uncompress!");
-			return failedToUncompress;
+			data = compressUncompressData(data, 0, 1);
+			if (!data)
+			{
+				writeln("Failed to uncompress!");
+				return failedToUncompress;
+			}
 		}
 		auto header = readHeader(data);
 		long start = 0;

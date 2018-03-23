@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
 	key = "FUNFUNWITHABUNBUN"
 
-	'''st = time.time()
+	st = time.time()
 	subprocess.call("tar -cf tarcheck.tar bin/dsfml".split(" "))
 	baselinec = (time.time() - st)
 
@@ -49,17 +49,51 @@ if __name__ == '__main__':
 	subprocess.call("tar -xf tarcheck.tar".split(" "))
 	baselineu = (time.time() - st)
 	subprocess.call("rm tarcheck.tar".split(" "))
-	'''
+
 	st = time.time()
 	if subprocess.call("make") != 0:
 		sys.exit(1)
-	#logging.info("Baselines:\n\tCompression: " + str(baselinec) + "\n\tDecompression: " + str(baselineu))
 	logging.info("Took " + str(time.time() - st) + " seconds to build!")
+	logging.info("Baselines:\n\tCompression: " + str(baselinec) + "\n\tDecompression: " + str(baselineu))
 
 	for i in range(100):
 		logging.info("Iter: " + str(i))
 		os.chdir("bin")
 		ot = time.time()
+		logging.info("Encryption only")
+
+		for i in range(10):
+			st = time.time()
+			one = subprocess.call(["./coda", "-e", "-k", key, "dsfml"])
+			compression = time.time() - st
+			if one != 0:
+				logging.critical("Failed with exit code:" + str(one))
+				clean()
+				sys.exit(1)
+
+			subprocess.call(["rm", "-rf", "dsfml"])
+			st = time.time()
+			two = subprocess.call(["./coda", "-d", "-k", key, "out.coda"])
+			uncompression = time.time() - st
+			if two != 0:
+				logging.critical("Failed with exit code:" + str(two))
+				clean()
+				sys.exit(1)
+
+			newdata = []
+			newnames = findAllFiles("dsfml")
+			for file in newnames:
+				file = open(file, 'r')
+				newdata.append(file.read())
+				file.close()
+
+			for j in range(len(newnames)):
+				if newnames[j] != oldnames[j] or newdata[j] != olddata[j]:
+					logging.error("Failed at: " + newnames[j])
+					clean()
+					sys.exit(1)
+			logging.info("Encryption: " + str(compression) + " Decryption: " + str(uncompression)+ " thats roughly Encryption:" + str(60 / compression) + " Decryption: " + str(60 / uncompression) + " per minute")
+		logging.info("Total time for encryption was: " + str(time.time() - ot) + " Average time for one iter: " + str((time.time() - ot) / 10))
 		logging.info("Compression with encryption")
 
 		for i in range(10):
@@ -93,7 +127,7 @@ if __name__ == '__main__':
 					clean()
 					sys.exit(1)
 			logging.info("Compression: " + str(compression) + " Decompression: " + str(uncompression)+ " thats roughly Compression:" + str(60 / compression) + " Decompression: " + str(60 / uncompression) + " per minute")
-		logging.info("Total time for encryption was: " + str(time.time() - ot) + " Average time for one iter: " + str((time.time() - ot) / 10))
+		logging.info("Total time for compression and encryption was: " + str(time.time() - ot) + " Average time for one iter: " + str((time.time() - ot) / 10))
 		
 		ot = time.time()
 		logging.info("Compression only")
@@ -106,8 +140,8 @@ if __name__ == '__main__':
 				clean()
 				sys.exit(1)
 
-			#if compression > baselinec:
-			#	logging.info("Took longer than the compression baseline with " + str(compression - baselinec) + " more seconds!")
+			if compression > baselinec:
+				logging.info("Took longer than the compression baseline with " + str(compression - baselinec) + " more seconds!")
 			
 			subprocess.call(["rm", "-rf", "dsfml"])
 			st = time.time()
@@ -118,8 +152,8 @@ if __name__ == '__main__':
 				clean()
 				sys.exit(1)
 			
-			#if uncompression > baselineu:
-			#	logging.info("Took longer than the uncompression baseline with " + str(uncompression - baselineu) + " more seconds!")
+			if uncompression > baselineu:
+				logging.info("Took longer than the uncompression baseline with " + str(uncompression - baselineu) + " more seconds!")
 			
 			newdata = []
 			newnames = findAllFiles("dsfml")

@@ -26,11 +26,15 @@ string encryptDecryptData(const string data, string key, const ubyte type)
 	import botan.rng.auto_rng : AutoSeededRNG;
 	import botan.utils.exceptn : DecodingError;
 
-	if (key.length == 0)
-		throw new CompressionException("Must include a key!");
 	ubyte[] newData = cast(ubyte[]) data;
 	auto state = globalState();
 	Unique!AutoSeededRNG rng = new AutoSeededRNG;
+	if (key.length == 0)
+	{
+		while (key.length < 50)
+			key ~= (rng.nextByte() % 94) + 33;
+		writeln("Your key is: " ~ key);
+	}
 	string encData;
 	if (!type)
 	{
@@ -52,6 +56,7 @@ string encryptDecryptData(const string data, string key, const ubyte type)
 
 unittest
 {
+	writeln("Doing encryptDecryptData unittest");
 	string data = "I love pepperoni pizza!";
 	string key = "I hate pineapple";
 	string encrypted = encryptDecryptData(data, key, 0);
@@ -74,6 +79,7 @@ size_t inArray(string[] haystack, string needle, size_t start)
 
 unittest
 {
+	writeln("Doing inArray unittest");
 	string[] haystack = ["hello", "world", "i", "hate", "pineapple"];
 	assert(inArray(haystack, "world", 0) > 0);
 	assert(inArray(haystack, "pineapple", 5) > 0);
@@ -129,7 +135,7 @@ string[] slurpFiles(const string[] files)
 *	If failed to compress, will throw ZstdException
 *	and return null.
 */
-string compressUncompressData(const string data, ubyte compressionLevel, const ubyte type)
+string compressUncompressData(const string data, const ubyte compressionLevel, const ubyte type)
 {
 	import zstd : compress, uncompress, ZstdException;
 
@@ -154,11 +160,12 @@ string compressUncompressData(const string data, ubyte compressionLevel, const u
 
 unittest
 {
+	writeln("Doing compressUncompressData unittest");
 	//Short string
 	string data = "I like dogs!";
 
-	string compressed = compressUncompressData(data, 0);
-	string uncompressed = compressUncompressData(compressed, 1);
+	string compressed = compressUncompressData(data, 22, 0);
+	string uncompressed = compressUncompressData(compressed, 22, 1);
 	assert(uncompressed == data);
 
 	//Long string
@@ -166,8 +173,8 @@ unittest
 
 	foreach(i; 0 .. 200)
 		data ~= "The world is ending!\n";
-	compressed = compressUncompressData(data, 0);
-	uncompressed = compressUncompressData(compressed, 1);
+	compressed = compressUncompressData(data, 22, 0);
+	uncompressed = compressUncompressData(compressed, 22, 1);
 	assert(uncompressed == data);
 }
 
@@ -213,6 +220,7 @@ class HeaderException : Exception
 /*
 *	Create a header based off of all the lengths of the files and the names of the files
 *	To create a lookup table for the file.
+*	If ../ in the name, remove ../ until it can not be found in the string
 */
 string createHeader(long[] lengths, string[] names)
 {
@@ -221,13 +229,18 @@ string createHeader(long[] lengths, string[] names)
 	if (lengths.length != names.length)
 		throw new HeaderException("Names and lengths do not equal");
 	foreach (i; 0 .. names.length)
+	{
+		while (names[i][0 .. 3] == "../")
+			names[i] = names[i][3 .. names[i].length];
 		header ~= names[i] ~ "\xb2" ~ to!string(lengths[i]) ~ "\xfe";
+	}
 	return (header ~ "\xb2\xfe\xfe");
 }
 
 unittest
 {
-	assert(createHeader([20, 20, 20, 20], ["hello.c", "hello.h", "goodbye.c", "goodbye.h"]) == 
+	writeln("Doing header unittest");
+	assert(createHeader([20, 20, 20, 20], ["../../../../../../hello.c", "../../../../../../hello.h", "../../../../../../goodbye.c", "../../../../../../goodbye.h"]) == 
 		"\xfe\xfe\xb2hello.c\xb220\xfehello.h\xb220\xfegoodbye.c\xb220\xfegoodbye.h\xb220\xfe\xb2\xfe\xfe");
 }
 
@@ -257,6 +270,7 @@ string[] getNamesLengths(string data)
 
 unittest
 {
+	writeln("Doing getNamesLengths unittest");
 	assert(getNamesLengths("\xfe\xfe\xb2hello.c\xb220\xfehello.h\xb220\xfegoodbye.c\xb220\xfegoodbye.h\xb220\xfe\xb2\xfe\xfe") ==
 		["hello.c\xb220", "hello.h\xb220", "goodbye.c\xb220", "goodbye.h\xb220"]);
 }
@@ -295,8 +309,9 @@ FileInfo[] readHeader(string data)
 
 unittest
 {
+	writeln("Doing readHeader unittest");
 	string header = createHeader([20, 20, 20, 20], ["hello.c", "hello.h", "goodbye.c", "goodbye.h"]);
 	auto readHeader = readHeader(header);
-	assert(readHeader == [FileInfo("hello.c", 20), FileInfo("hello.h", 20), FileInfo("goodbye.c", 20), FileInfo("goodbye.h", 20));
+	assert(readHeader == [FileInfo("hello.c", 20), FileInfo("hello.h", 20), FileInfo("goodbye.c", 20), FileInfo("goodbye.h", 20)]);
 }
 
