@@ -10,16 +10,17 @@ From most import to least important.
   botan         - for encryption
   zstd-d        - for compression
   zlib-dev      - parent lib for zstd
- ``` 
-To install simply run make after downloading it.
+ ```
 
 ### OSX and Linux:
 ```
+sudo apt-get install libzstd-dev then run make.
   Then you have the option of adding bin to your path, or running make install. Which will require sudo accsess to put coda into your /usr/bin.
 ```
   
 ### Windows:
 ```
+Get the libzstd library then run make.
   To add it to your path go to advanced system variables and add the location to the path or make installWindows. Will be installed into your C:/Program Files/Coda.
   
  Although you can install on windows, it is untested on windows.
