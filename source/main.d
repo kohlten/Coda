@@ -5,7 +5,7 @@ import std.algorithm : canFind;
 import std.array : split;
 import std.string : indexOf;
 import std.file : exists, isFile, isDir, mkdir;
-import std.datetime.stopwatch;
+import std.datetime : MonoTime;
 import extraFuncs;
 
 immutable string VERSION = "v0.0.7";
@@ -83,7 +83,6 @@ int main(string[] argv)
 	string key;
 	string outputFile = "out";
 	bool skip = false;
-	auto time = StopWatch(AutoStart.no);
 	foreach (i; 1 .. argv.length)
 	{
 		if (!skip)
@@ -164,7 +163,7 @@ int main(string[] argv)
 		writeln("Error: " ~ to!(string)(argumentError) ~ " Cannot encrypt data to be decompressed! Do --help for help!");	
 		return argumentError;
 	}
-	time.start();
+	auto time = MonoTime.currTime;
 	if (compressing || encryptF)
 	{
 		files = goThroughDirs(files);
@@ -218,7 +217,7 @@ int main(string[] argv)
 			writeln("Original Length: ", ulength);
 			writeln("Compressed Length: ", clength);
 			writeln("Compression ratio: ", cast(float) ulength /  cast(float) clength);
-			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
+			writeln("Took " ~ to!string(MonoTime.currTime - time) ~ " seconds to complete.");
 		}
 	} 
 	else
@@ -269,7 +268,7 @@ int main(string[] argv)
 			start += file.length;
 		}
 		if (verbose)
-			writeln("Took " ~ to!string(time.peek()) ~ " seconds to complete.");
+			writeln("Took " ~ to!string(MonoTime.currTime - time) ~ " seconds to complete.");
 	}
 	return ok;
 }
