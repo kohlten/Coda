@@ -1,6 +1,11 @@
 # Coda Compression Program
 Simple compression and decompression program with optional encryption.
 
+DEV BRANCH
+Will have new features but also bugs waiting to be fixed.
+DMD and GDC is currently broken, please use ldc 1.7.0.
+Botan is failing to compile on newest version of dlang compilers.
+
 From most import to least important.
 
 ### Dependencies:
@@ -10,7 +15,7 @@ From most import to least important.
   botan         - for encryption
   zstd-d        - for compression
   zlib-dev      - parent lib for zstd
- ``` 
+ ```
 To install simply run make after downloading it.
 
 ### OSX and Linux:
@@ -48,8 +53,8 @@ Thanks!
   -c  --compress:			Compress files
   -cl --compressionLevel:	Set the compression level. Default is 9. A value between 1-22.
   -en  --encrypt			Also encrypt the data before compression.
-    -k= --key=				Set the key for decyption. Must be less than 49.
+    -k= --key=				Set the key for decyption.
   -de --decrypt				Also decrypt the data.
-    -k= --key=				Set the key for decyption. Must be less than 49.
+    -k= --key=				Set the key for decyption.
   -n= --name=				Set the name for the output file in compression. Useless for decompression.
 ```

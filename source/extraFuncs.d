@@ -2,6 +2,13 @@ import std.stdio : stderr, writeln;
 import std.file;
 import std.string : indexOf;
 import std.conv;
+import zstd.c.zstd;
+import zstd : compress, uncompress, ZstdException;
+import botan.libstate.global_state : globalState;
+import botan.constructs.cryptobox : CryptoBox;
+import botan.rng.rng : Unique;
+import botan.rng.auto_rng : AutoSeededRNG;
+import botan.utils.exceptn : DecodingError;
 
 /*
 *	Simple exception class thrown for verbose data.
@@ -14,18 +21,19 @@ class CompressionException : Exception
     }
 }
 
+string botanVersion()
+{
+	import botan.constants;
+	string botanVersion = to!string(BOTAN_VERSION_MAJOR) ~ "." ~ to!string(BOTAN_VERSION_MINOR) ~ "." ~ to!string(BOTAN_VERSION_PATCH);
+	return (botanVersion);
+}
+
 /*
 *	Encrypt or decrypt data based on a key.
 *	If the key is not correct, will throw CryptographicException.
 */
 string encryptDecryptData(const string data, string key, const ubyte type)
 {
-	import botan.libstate.global_state : globalState;
-	import botan.constructs.cryptobox : CryptoBox;
-	import botan.rng.rng : Unique;
-	import botan.rng.auto_rng : AutoSeededRNG;
-	import botan.utils.exceptn : DecodingError;
-
 	ubyte[] newData = cast(ubyte[]) data;
 	auto state = globalState();
 	Unique!AutoSeededRNG rng = new AutoSeededRNG;
@@ -130,6 +138,12 @@ string[] slurpFiles(const string[] files)
 	return data;
 }
 
+string ZSTDVersion()
+{
+	import zstd.common;
+	return zstdVersion();
+}
+
 /*
 *	Compress or decompress all the data given to it.
 *	If failed to compress, will throw ZstdException
@@ -137,8 +151,6 @@ string[] slurpFiles(const string[] files)
 */
 string compressUncompressData(const string data, const ubyte compressionLevel, const ubyte type)
 {
-	import zstd : compress, uncompress, ZstdException;
-
 	string resultData;
 
 	if (type == 0)

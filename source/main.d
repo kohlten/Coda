@@ -131,7 +131,9 @@ int main(string[] argv)
 					verbose = 1;
 					break;
 				case "--version":
-					writeln(VERSION);
+					writeln("Coda: " ~ VERSION);
+					writeln("Using botan version: " ~ botanVersion());
+					writeln("Using ZSTD version: " ~ ZSTDVersion());
 					return 0;
 				case "--help":
 					writeln(HELP);
