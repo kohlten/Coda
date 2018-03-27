@@ -185,8 +185,6 @@ int main(string[] argv)
 			outData ~= data[name];
 		}
 		string header = createHeader(lengths, data.keys);
-		writeln(data.keys);
-		writeln(header);
 		outData = header ~ outData;
 		if (compressing)
 		{
