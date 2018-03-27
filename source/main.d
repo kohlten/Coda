@@ -169,7 +169,7 @@ int main(string[] argv)
 	if (compressing || encryptF)
 	{
 		files = goThroughDirs(files);
-		string[] data = slurpFiles(files);
+		string[string] data = slurpFiles(files);
 		if (!data)
 		{
 			writeln("Was unable to get any data. Please input valid files.");
@@ -178,13 +178,16 @@ int main(string[] argv)
 		long[] lengths;
 		long ulength;
 		string outData;
-		foreach (i; 0 .. files.length)
+		foreach (name; data.keys)
 		{
-			ulength += data[i].length;
-			lengths ~= data[i].length;
-			outData ~= data[i];
+			ulength += data[name].length;
+			lengths ~= data[name].length;
+			outData ~= data[name];
 		}
-		outData = createHeader(lengths, files) ~ outData;
+		string header = createHeader(lengths, data.keys);
+		writeln(data.keys);
+		writeln(header);
+		outData = header ~ outData;
 		if (compressing)
 		{
 			outData = compressUncompressData(outData, compressionLevel, 0);
@@ -224,53 +227,58 @@ int main(string[] argv)
 	} 
 	else
 	{
-		string data = slurpFiles(files)[0];
-		if (decryptF)
+		files = goThroughDirs(files);
+		string[string] outFiles = slurpFiles(files);
+		foreach(name; outFiles.keys)
 		{
-			data = encryptDecryptData(data, key, 1);
-			if (!data)
+			string data = outFiles[name];
+			if (decryptF)
 			{
-				writeln("Failed to decrypt!");
-				return failedToDecrypt;
-			}
-		}
-		if (decompressing)
-		{
-			data = compressUncompressData(data, 0, 1);
-			if (!data)
-			{
-				writeln("Failed to uncompress!");
-				return failedToUncompress;
-			}
-		}
-		auto header = readHeader(data);
-		long start = 0;
-		data = data[indexOf(data, "\xb2\xfe\xfe") + 3 .. data.length];
-		foreach (file; header)
-		{
-			if (canFind(file.name, "/"))
-			{
-				string[] dirs = file.name.split("/");
-				dirs = dirs[0 .. dirs.length - 1];
-				string current;
-				foreach (i; 0 .. dirs.length)
+				data = encryptDecryptData(data, key, 1);
+				if (!data)
 				{
-					current ~= dirs[i] ~ "/";
-					if (!exists(current))
-						mkdir(current);
+					writeln("Failed to decrypt!");
+					return failedToDecrypt;
 				}
 			}
-			try
+			if (decompressing)
 			{
-				File openFile = File(file.name, "wb");
-				openFile.rawWrite(data[start .. file.length + start]);
+				data = compressUncompressData(data, 0, 1);
+				if (!data)
+				{
+					writeln("Failed to uncompress!");
+					return failedToUncompress;
+				}
 			}
-			catch (ErrnoException e)
-				writeln("Was unable to write to file " ~ file.name ~ " with error " ~ to!string(e)[0 .. to!string(e).indexOf('\n')]);
-			start += file.length;
+			auto header = readHeader(data);
+			long start = 0;
+			data = data[indexOf(data, "\xb2\xfe\xfe") + 3 .. data.length];
+			foreach (file; header)
+			{
+				if (canFind(file.name, "/"))
+				{
+					string[] dirs = file.name.split("/");
+					dirs = dirs[0 .. dirs.length - 1];
+					string current;
+					foreach (i; 0 .. dirs.length)
+					{
+						current ~= dirs[i] ~ "/";
+						if (!exists(current))
+							mkdir(current);
+					}
+				}
+				try
+				{
+					File openFile = File(file.name, "wb");
+					openFile.rawWrite(data[start .. file.length + start]);
+				}
+				catch (ErrnoException e)
+					writeln("Was unable to write to file " ~ file.name ~ " with error " ~ to!string(e)[0 .. to!string(e).indexOf('\n')]);
+				start += file.length;
+			}
+			if (verbose)
+				writeln("Took " ~ to!string(MonoTime.currTime - time) ~ " seconds to complete.");
 		}
-		if (verbose)
-			writeln("Took " ~ to!string(MonoTime.currTime - time) ~ " seconds to complete.");
 	}
 	return ok;
 }

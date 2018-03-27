@@ -99,9 +99,9 @@ unittest
 *	If unable to get any data from the files inputted,
 *	will return null.
 */
-string[] slurpFiles(const string[] files)
+string[string] slurpFiles(const string[] files)
 {
-	string[] data;
+	string[string] data;
 	string slurped;
 	int failedAmount;
 	bool failed;
@@ -114,7 +114,7 @@ string[] slurpFiles(const string[] files)
 		{
 			slurped = cast(string) read(file);
 			if (slurped)
-				data ~= slurped; 
+				data[file] = slurped; 
 			else
 			{
 				writeln("Was unable to slurp " ~ file ~ ".");
