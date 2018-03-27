@@ -148,9 +148,9 @@ size_t inArray(string[] haystack, string needle, size_t start)
 *	If it is unable to convert or read the file,
 *	Throws a FileError
 */
-string[] slurpFiles(const string[] files)
+string[string] slurpFiles(const string[] files)
 {
-	string[] data;
+	string[string] data;
 	string slurped;
 	int failedAmount;
 	bool failed = false;
@@ -161,7 +161,7 @@ string[] slurpFiles(const string[] files)
 		{
 			slurped = cast(string) read(file);
 			if (slurped)
-				data ~= slurped; 
+				data[file] = slurped; 
 			else
 			{
 				writeln("Was unable to slurp " ~ file ~ ".");
@@ -358,28 +358,28 @@ int main(string[] argv)
 	if (compressing)
 	{
 		files = goThroughDirs(files);
-		string[] data = slurpFiles(files);
+		string[string] data = slurpFiles(files);
 		if (!data)
 		{
 			throwError("Was unable to get any data. Please input valid files.");
 			return failedToRead;
 		}
 		JSONValue json = JSONValue(string[string].init);
-		foreach (i; 0 .. files.length)
+		foreach (name; data.keys)
 		{
 			try
 			{
-				data[i] = toUTF8(data[i]);
-				validate(data[i]);
+				data[name] = toUTF8(data[name]);
+				validate(data[name]);
 			}
 			catch (UTFException)
 			{
-				writeln("WARNING: File " ~ files[i] ~ " is invalid!");
+				writeln("WARNING: File " ~ name ~ " is invalid!");
 				continue;
 			}
 			if (verbose)
-				writeln(files[i] ~ " is compressed!");
-			json[files[i]] = data[i];
+				writeln(name ~ " is compressed!");
+			json[name] = data[name];
 		}
 		string prettyString = json.toPrettyString;
 		if (encryptF)
@@ -392,34 +392,37 @@ int main(string[] argv)
 	} 
 	else
 	{
-		string data = slurpFiles(files)[0];
-		data = compressUncompressData(data, 1);
-		if (decryptF)
-			data = encryptDecryptData(data, key, 1);
-		if (!data)
+		string[string] data = slurpFiles(files);
+		foreach(name; data.keys)
 		{
-			throwError("Failed to uncompress!");
-			return failedToUncompress;
-		}
-		auto json = parseJSON(data);
-		foreach (string jsonkey, JSONValue value; json)
-		{
-			if (canFind(jsonkey, "/"))
+			string undata = compressUncompressData(data[name], 1);
+			if (decryptF)
+				undata = encryptDecryptData(undata, key, 1);
+			if (!undata)
 			{
-				string[] dirs = jsonkey.split("/");
-				dirs = dirs[0 .. dirs.length - 1];
-				string current;
-				foreach (i; 0 .. dirs.length)
-				{
-					current ~= dirs[i] ~ "/";
-					if (!exists(current))
-						mkdir(current);
-				}
+				throwError("Failed to uncompress!");
+				return failedToUncompress;
 			}
-			if (verbose)
-				writeln(jsonkey);
-			write(jsonkey, value.str);
+			auto json = parseJSON(undata);
+			foreach (string jsonkey, JSONValue value; json)
+			{
+				if (canFind(jsonkey, "/"))
+				{
+					string[] dirs = jsonkey.split("/");
+					dirs = dirs[0 .. dirs.length - 1];
+					string current;
+					foreach (i; 0 .. dirs.length)
+					{
+						current ~= dirs[i] ~ "/";
+						if (!exists(current))
+							mkdir(current);
+					}
+				}
+				if (verbose)
+					writeln(jsonkey);
+				write(jsonkey, value.str);
+			}
 		}
-}
+	}
 	return ok;
 }
