@@ -5,6 +5,9 @@ From most import to least important.
 DMD and GDC is currently broken, please use ldc 1.7.0.
 Botan is failing to compile on newest version of dlang compilers.
 
+***WARNING***
+This branch is outdated! Use the dev branch!
+
 ### Dependencies:
 ```
   dub
