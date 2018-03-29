@@ -1,9 +1,6 @@
 # Coda Compression Program
 Simple compression and decompression program with optional encryption.
 
-DEV BRANCH
-Will have new features but also bugs waiting to be fixed.
-
 From most import to least important.
 
 ### Dependencies:
