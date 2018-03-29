@@ -1,4 +1,4 @@
-DC=ldc
+DC=ldc2
 
 NAME=bin/coda
 
