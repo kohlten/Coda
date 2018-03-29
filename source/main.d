@@ -8,7 +8,7 @@ import std.file : exists, isFile, isDir, mkdir;
 import std.datetime : MonoTime;
 import extraFuncs;
 
-immutable string VERSION = "v0.0.7";
+immutable string VERSION = "v0.0.8";
 immutable string HELP =
 "Coda Compression Program
 Made by: Alex Strole
@@ -83,6 +83,7 @@ int main(string[] argv)
 	string key;
 	string outputFile = "out";
 	bool skip = false;
+
 	foreach (i; 1 .. argv.length)
 	{
 		if (!skip)
@@ -131,8 +132,8 @@ int main(string[] argv)
 					break;
 				case "--version":
 					writeln("Coda: " ~ VERSION);
-					writeln("Using botan version: " ~ botanVersion());
-					writeln("Using ZSTD version: " ~ ZSTDVersion());
+					writeln("Using openSSL version: " ~ getOpenSSLVersion());
+					writeln("Using ZSTD version: " ~ getZSTDVersion());
 					return 0;
 				case "--help":
 					writeln(HELP);
@@ -167,7 +168,7 @@ int main(string[] argv)
 	}
 	auto time = MonoTime.currTime;
 	if (compressing || encryptF)
-	{
+	{	
 		files = goThroughDirs(files);
 		string[string] data = slurpFiles(files);
 		if (!data)
@@ -191,7 +192,7 @@ int main(string[] argv)
 			outData = compressUncompressData(outData, compressionLevel, 0);
 			if (!outData)
 			{
-					writeln("Was unable to compress data.");
+					writeln("Error: " ~ to!(string)(failedToCompress) ~ " Was unable to compress data!");
 					return failedToCompress;
 			}
 		}
@@ -201,7 +202,7 @@ int main(string[] argv)
 			outData = encryptDecryptData(outData, key, 0);
 			if (!outData)
 			{
-				writeln("Was unable to encrypt data.");
+				writeln("Error: " ~ to!(string)(failedToEncrypt) ~ " Was unable to encrypt data.");
 				return failedToEncrypt;
 			}
 		}
@@ -222,6 +223,7 @@ int main(string[] argv)
 			writeln("Compression ratio: ", cast(float) ulength /  cast(float) clength);
 			writeln("Took " ~ to!string(MonoTime.currTime - time) ~ " seconds to complete.");
 		}
+		
 	} 
 	else
 	{
@@ -235,7 +237,7 @@ int main(string[] argv)
 				data = encryptDecryptData(data, key, 1);
 				if (!data)
 				{
-					writeln("Failed to decrypt!");
+					writeln("Error: " ~ to!(string)(failedToDecrypt) ~ " Failed to decrypt! Invalid key?");
 					return failedToDecrypt;
 				}
 			}
@@ -244,7 +246,7 @@ int main(string[] argv)
 				data = compressUncompressData(data, 0, 1);
 				if (!data)
 				{
-					writeln("Failed to uncompress!");
+					writeln("Error: " ~ to!(string)(failedToUncompress) ~ " Failed to uncompress!");
 					return failedToUncompress;
 				}
 			}
@@ -277,6 +279,7 @@ int main(string[] argv)
 			if (verbose)
 				writeln("Took " ~ to!string(MonoTime.currTime - time) ~ " seconds to complete.");
 		}
+		
 	}
 	return ok;
 }

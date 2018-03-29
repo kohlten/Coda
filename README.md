@@ -3,8 +3,6 @@ Simple compression and decompression program with optional encryption.
 
 DEV BRANCH
 Will have new features but also bugs waiting to be fixed.
-DMD and GDC is currently broken, please use ldc 1.7.0.
-Botan is failing to compile on newest version of dlang compilers.
 
 From most import to least important.
 
@@ -20,7 +18,7 @@ To install simply run make after downloading it.
 
 ### OSX and Linux:
 ```
-sudo apt-get install libzstd-dev then run make.
+  apt-get install libzstd-dev then run make.
   Then you have the option of adding bin to your path, or running make install. Which will require sudo accsess to put coda into your /usr/bin.
 ```
   

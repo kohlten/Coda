@@ -1,59 +1,49 @@
-CC=ldc2
+DC=ldc
 
-.PHONY: all
+NAME=bin/coda
 
-all:
+$(NAME):
 	if [ ! -d "bin" ]; then \
 		mkdir bin; \
 	fi
-	dub build --compiler=$(CC) --build=release
+	dub build --compiler=$(DC) --build=release
 
-.PHONY: allv
+all: $(NAME)
 
 allv:
 	if [ ! -d "bin" ]; then \
 		mkdir bin; \
 	fi
-	dub build --compiler=$(CC) --vverbose --build=release
+	dub build --compiler=$(DC) --vverbose --build=release
 
 .PHONY: test
 
 test:
-	dub test --compiler=$(CC)
-
-.PHONY: clean
+	dub test --compiler=$(DC)
 
 clean:
 	dub clean
 
-.PHONY: fclean
-
 fclean: clean
 	rm -rf bin
 	rm -rf .dub
-	
-.PHONY: install
 
 install:
 	sudo cp bin/coda /usr/bin
-	
-.PHONY: uninstall
 
 uninstall:
-	sudo rm usr/bin/coda
-
-.PHONY: installWindows	
+	sudo rm usr/bin/coda	
 
 installWindows:
 	mkdir C:/Program\ Files/Coda
 	copy bin/coda C:/Program\ Files/coda/
 
-.PHONY: uninstallWindows
-
 uninstallWindows:
 	del C:/Program\ Files/Coda/coda
 	rmdir C:/Program\ Files/Coda
 
-.PHONY: re
-
 re: fclean all
+
+.PHONY: all re uninstallWindows installWindows uninstall install fclean test
+
+

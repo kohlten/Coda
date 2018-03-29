@@ -1,14 +1,9 @@
-import std.stdio : stderr, writeln;
+module extraFuncs;
+
+import std.stdio : writeln;
 import std.file;
 import std.string : indexOf;
-import std.conv;
-import zstd.c.zstd;
-import zstd : compress, uncompress, ZstdException;
-import botan.libstate.global_state : globalState;
-import botan.constructs.cryptobox : CryptoBox;
-import botan.rng.rng : Unique;
-import botan.rng.auto_rng : AutoSeededRNG;
-import botan.utils.exceptn : DecodingError;
+import std.conv : to;
 
 /*
 *	Simple exception class thrown for verbose data.
@@ -21,11 +16,10 @@ class CompressionException : Exception
     }
 }
 
-string botanVersion()
+string getOpenSSLVersion()
 {
-	import botan.constants;
-	string botanVersion = to!string(BOTAN_VERSION_MAJOR) ~ "." ~ to!string(BOTAN_VERSION_MINOR) ~ "." ~ to!string(BOTAN_VERSION_PATCH);
-	return (botanVersion);
+	import deimos.openssl.opensslv;
+	return (OPENSSL_VERSION_TEXT);
 }
 
 /*
@@ -34,31 +28,46 @@ string botanVersion()
 */
 string encryptDecryptData(const string data, string key, const ubyte type)
 {
+	import secured.aes;
+	import secured.random;
+	import secured.util;
+
 	ubyte[] newData = cast(ubyte[]) data;
-	auto state = globalState();
-	Unique!AutoSeededRNG rng = new AutoSeededRNG;
-	if (key.length == 0)
+	if (key.length == 0 && type == 0)
 	{
-		while (key.length < 50)
-			key ~= (rng.nextByte() % 94) + 33;
+		foreach(i; 0 .. 32)
+		{
+			ubyte choice = random(1)[0] % 3;
+			if (choice == 0)
+				key ~= (random(1)[0] % 10) + 48;
+			else if (choice == 1)
+				key ~= (random(1)[0] % 26) + 65;
+			else
+				key ~= (random(1)[0] % 26) + 97;
+		}
 		writeln("Your key is: " ~ key);
 	}
+	else if (key.length > 0)
+		while (key.length < 32)
+			key ~= "0";
+	else
+		return null;
+	ubyte[] newKey = cast(ubyte[]) key;
 	string encData;
 	if (!type)
 	{
 		try
-			encData = cast(string) CryptoBox.encrypt(newData.ptr, newData.length, key, *rng);
-		catch(DecodingError)
+			encData = cast(string) encrypt(newKey, newData);
+		catch(CryptographicException)
 			encData = null;
 	}
 	else
 	{
 		try
-			encData = cast(string) CryptoBox.decrypt(newData.ptr, newData.length, key);
-		catch(DecodingError)
+			encData = cast(string) decrypt(newKey, newData);
+		catch(CryptographicException)
 			encData = null;
 	}
-	
 	return encData;
 }
 
@@ -75,7 +84,7 @@ unittest
 /*
 *	Check if needle is in haystack starting from start.
 */
-size_t inArray(string[] haystack, string needle, size_t start)
+@nogc @safe size_t inArray(string[] haystack, string needle, size_t start)
 {
 	foreach (i; start .. haystack.length)
 	{
@@ -101,6 +110,8 @@ unittest
 */
 string[string] slurpFiles(const string[] files)
 {
+	import std.file;
+
 	string[string] data;
 	string slurped;
 	int failedAmount;
@@ -138,7 +149,7 @@ string[string] slurpFiles(const string[] files)
 	return data;
 }
 
-string ZSTDVersion()
+@safe string getZSTDVersion()
 {
 	import zstd.common;
 	return zstdVersion();
@@ -151,6 +162,8 @@ string ZSTDVersion()
 */
 string compressUncompressData(const string data, const ubyte compressionLevel, const ubyte type)
 {
+	import zstd : compress, uncompress, ZstdException;
+
 	string resultData;
 
 	if (type == 0)
