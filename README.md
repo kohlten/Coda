@@ -7,7 +7,7 @@ From most import to least important.
 ```
   dub
   A D compiler  - (ldc dmd gdc)
-  botan         - for encryption
+  openssl       - for encryption
   zstd-d        - for compression
   zlib-dev      - parent lib for zstd
  ```
