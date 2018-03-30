@@ -8,14 +8,18 @@ From most import to least important.
   dub
   A D compiler  - (ldc dmd gdc)
   openssl       - for encryption
-  zstd-d        - for compression
-  zlib-dev      - parent lib for zstd
  ```
 To install simply run make after downloading it.
 To make using a different compiler than ldc run
 ```
 make all DC=< compiler >
 ```
+If you wish to build using dub run
+```
+dub build --compiler=<  compiler >
+```
+but I would suggest using make.
+Make wil
 ### OSX and Linux:
 ```
   apt-get install libzstd-dev then run make.
