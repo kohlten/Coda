@@ -19,7 +19,7 @@ If you wish to build using dub run
 dub build --compiler=<  compiler >
 ```
 but I would suggest using make.
-Make wil
+Make will get all the dependencies except for openssl.
 ### OSX and Linux:
 ```
   apt-get install libzstd-dev then run make.
