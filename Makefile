@@ -1,11 +1,12 @@
-DC=ldc2
+DC=dmd
 NAME=bin/coda
 LIBS=libsecured.a
 LIBIFLAGS=-Idepends/SecureD/source -Idepends/openssl-d/
 LIBSRC=depends/SecureD/source/secured/*.d
 IFLAGS=-Isource/ -Idepends/SecureD/source -Idepends/openssl-d -Idepends/zstd-d/source
 SRC=source/*.d depends/zstd-d/source/zstd/c/zstd.d depends/zstd-d/source/zstd/*.d libsecured.a
-LFLAGS=-L=-Ldepends/zlib/ -L=-lz -L=-Ldepends/zstd//lib -L=-lzstd -L=-lssl -L=-lcrypto
+LLFLAGS=-L=-Ldepends/zlib/ -L=-lz -L=-Ldepends/zstd//lib -L=-lzstd -L=-lssl -L=-lcrypto
+DLFLAGS=-L-Ldepends/zlib -L-lz -L-Ldepends/zstd//lib -L-lzstd -L-lssl -L-lcrypto -g
 
 $(NAME):
 	if [ ! -d "obj" ]; then \
@@ -15,17 +16,17 @@ $(NAME):
 	if [ $(DC) == "ldc2" ]; then \
 		$(DC) -lib -of$(LIBS) -od=obj -Oz -O3 -d-version=OpenSSL -d-version=Have_secured -d-version=Have_openssl $(LIBIFLAGS) $(LIBSRC); \
 		$(DC) -ofbin/coda -d-version=OpenSSL -od=obj -Oz -O3  \
-			-d-version=Have_coda -d-version=Have_zstd -d-version=Have_secured -d-version=Have_openssl $(IFLAGS)  $(SRC) $(LFLAGS) -vcolumns; \
+			-d-version=Have_coda -d-version=Have_zstd -d-version=Have_secured -d-version=Have_openssl $(IFLAGS)  $(SRC) $(LLFLAGS) -vcolumns; \
 	fi
 	if [ $(DC) == "dmd" ]; then \
 		$(DC) -c -v -of=$(LIBS) -od=obj -version=OpenSSL -version=Have_secured -version=Have_openssl $(LIBIFLAGS) $(LIBSRC); \
 		$(DC) -v -of=bin/coda -version=OpenSSL -od=obj \
-			-version=Have_coda -version=Have_zstd -version=Have_secured -version=Have_openssl $(IFLAGS) $(SRC) $(LFLAGS) -vcolumns; \
+			-version=Have_coda -version=Have_zstd -version=Have_secured -version=Have_openssl $(IFLAGS) $(SRC) $(DLFLAGS); \
 	fi
 	if [ $(DC) == "gdc" ]; then \
 		$(DC) -lib -offilename $(LIBS) -od=obj -O3 --release -version=OpenSSL -version=Have_secured -version=Have_openssl $(LIBIFLAGS) $(LIBSRC); \
 		$(DC) -offilename bin/coda -version=OpenSSL -od=obj -O3 --release \
-			-version=Have_coda -version=Have_zstd -version=Have_secured -version=Have_openssl $(IFLAGS) $(SRC) $(LFLAGS) -vcolumns; \
+			-version=Have_coda -version=Have_zstd -version=Have_secured -version=Have_openssl $(IFLAGS) $(SRC) $(DLFLAGS); \
 	fi
 
 all: $(NAME)
@@ -42,7 +43,7 @@ depends:
 	-git clone https://github.com/D-Programming-Deimos/openssl.git depends/openssl-d
 	-git clone https://github.com/facebook/zstd.git depends/zstd
 	-git clone https://github.com/madler/zlib.git depends/zlib
-	cd depends/zstd && make
+	cd depends/zstd && make && cd lib && rm *.dylib
 	cd depends/zlib && ./configure && make
 
 clean:
@@ -70,6 +71,6 @@ uninstallWindows:
 
 re: fclean all
 
-.PHONY: all re uninstallWindows installWindows uninstall install fclean depends
+.PHONY: all re uninstallWindows installWindows uninstall install fclean
 
 
