@@ -22,14 +22,14 @@ but I would suggest using make.
 Make will get all the dependencies except for openssl.
 ### OSX and Linux:
 ```
-  apt-get install libzstd-dev then run make.
-  Then you have the option of adding bin to your path, or running make install. Which will require sudo accsess to put coda into your /usr/bin.
+  make
+  make install
 ```
   
 ### Windows:
 ```
-Get the libzstd library then run make.
-  To add it to your path go to advanced system variables and add the location to the path or make installWindows. Will be installed into your C:/Program Files/Coda.
+make
+make installWindows
   
  Although you can install on windows, it is untested on windows.
  ```
