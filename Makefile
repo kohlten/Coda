@@ -42,7 +42,6 @@ depends:
 	-git clone https://github.com/madler/zlib.git depends/zlib
 	-cd depends/zstd && make && cd lib && rm *.dylib
 	-cd depends/zlib && ./configure && make
-	python fix.py
 
 clean:
 	-rm -rf obj
