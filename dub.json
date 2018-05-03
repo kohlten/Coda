@@ -5,7 +5,7 @@
 	],
 	"dependencies": {
 		"zstd": "~>0.2.0",
-		"secured": "~>0.8.7",
+		"secured": "~>1.0.0",
 	},
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018, Alexander Strole",
